@@ -1,4 +1,4 @@
-# POCHAK-Android
+# Welcome! We are POCHAK 📸
 <img width="1920" alt="소개페이지" src="https://github.com/SMWU-POCHAK/.github/assets/96935231/abda1ede-f3ea-488f-8099-be58e9f0ead8">
 
 ## <img width="40" src="https://github.com/5jisoo/5jisoo/assets/96935231/ed632e34-eb9d-47ae-990d-79f58b1e5669"/> 당신의 순간, 포착!  [![app store badge](http://img.shields.io/badge/App%20Store-4285F4?style=flat&logo=app-store&link=https://apps.apple.com/kr/app/pochak/id6502332418&logoColor=white)](https://apps.apple.com/kr/app/pochak/id6502332418)
