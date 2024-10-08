@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "com.dyddyd.aquariumwidget.core.ui"
+    namespace = "com.site.pochak.app.core.ui"
 }
 
 dependencies {
