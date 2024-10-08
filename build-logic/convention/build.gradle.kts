@@ -59,5 +59,9 @@ gradlePlugin {
             id = "pochak.android.room"
             implementationClass = "AndroidRoomConventionPlugin"
         }
+        register("jvmLibrary") {
+            id = "pochak.jvm.library"
+            implementationClass = "JvmLibraryConventionPlugin"
+        }
     }
 }
