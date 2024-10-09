@@ -19,3 +19,10 @@ rootProject.name = "POCHAK"
 
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 include(":app")
+include(":core:common")
+include(":core:data")
+include(":core:database")
+include(":core:designsystem")
+include(":core:model")
+include(":core:network")
+include(":core:ui")
