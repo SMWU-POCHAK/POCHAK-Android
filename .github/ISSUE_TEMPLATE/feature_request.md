@@ -1,20 +1,18 @@
 ---
 name: Feature request
-about: Suggest an idea for this project
-title: ''
+about: 구현할 기능을 이슈에 등록한다.
+title: "[TAG] 이슈의 제목을 입력해주세요"
 labels: ''
 assignees: ''
 
 ---
 
-**Is your feature request related to a problem? Please describe.**
-A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
+## 🤷 구현할 기능
 
-**Describe the solution you'd like**
-A clear and concise description of what you want to happen.
+## 🔨 상세 작업 내용
 
-**Describe alternatives you've considered**
-A clear and concise description of any alternative solutions or features you've considered.
+- [ ] To-do 1
+- [ ] To-do 2
+- [ ] To-do 3
 
-**Additional context**
-Add any other context or screenshots about the feature request here.
+## 📄 참고 사항
