@@ -22,7 +22,8 @@ val LightColorScheme = lightColorScheme(
  *
  * 추가 예정
  */
-val DarkColorScheme: ColorScheme = TODO("다크 테마 디자인 추가 후, 적용")
+// TODO: 다크 테마 디자인 추가 후, 적용
+val DarkColorScheme: ColorScheme = LightColorScheme
 
 @Composable
 fun PochakTheme(
