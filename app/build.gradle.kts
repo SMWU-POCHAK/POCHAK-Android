@@ -29,6 +29,15 @@ android {
 }
 
 dependencies {
+    implementation(projects.core.ui)
+    implementation(projects.core.designsystem)
+
+    implementation(projects.feature.login)
+    implementation(projects.feature.home)
+    implementation(projects.feature.post)
+    implementation(projects.feature.camera)
+    implementation(projects.feature.alarm)
+    implementation(projects.feature.profile)
 
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.material3.adaptive)
