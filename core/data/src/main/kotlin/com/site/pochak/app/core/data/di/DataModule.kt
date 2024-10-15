@@ -1,9 +1,9 @@
-package com.site.pochak.app.core.data.model.di
+package com.site.pochak.app.core.data.di
 
-import com.site.pochak.app.core.data.model.repository.LoginRepository
-import com.site.pochak.app.core.data.model.repository.LoginRepositoryImpl
-import com.site.pochak.app.core.data.model.repository.ProfileRepository
-import com.site.pochak.app.core.data.model.repository.ProfileRepositoryImpl
+import com.site.pochak.app.core.data.repository.LoginRepository
+import com.site.pochak.app.core.data.repository.LoginRepositoryImpl
+import com.site.pochak.app.core.data.repository.ProfileRepository
+import com.site.pochak.app.core.data.repository.ProfileRepositoryImpl
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn

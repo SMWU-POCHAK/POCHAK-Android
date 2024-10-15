@@ -1,4 +1,4 @@
-package com.site.pochak.app.core.data.model.repository
+package com.site.pochak.app.core.data.repository
 
 import com.site.pochak.app.core.network.service.ProfileService
 import javax.inject.Inject
