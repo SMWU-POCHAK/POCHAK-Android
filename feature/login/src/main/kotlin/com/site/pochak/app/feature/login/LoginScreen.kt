@@ -14,6 +14,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -22,6 +24,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.android.gms.auth.GoogleAuthUtil
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
@@ -30,6 +33,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+private const val TAG = "LoginScreen"
 
 @Composable
 internal fun LoginRoute(
@@ -37,9 +41,13 @@ internal fun LoginRoute(
     viewModel: LoginViewModel = hiltViewModel(),
     onLoginSuccess: () -> Unit,
 ) {
+    val loginUiState by viewModel.loginUiState.collectAsStateWithLifecycle()
+
     LoginScreen(
         modifier = modifier,
         onLoginSuccess = onLoginSuccess,
+        loginUiState = loginUiState,
+        onGoogleLogin = viewModel::googleLogin
     )
 }
 
@@ -47,7 +55,18 @@ internal fun LoginRoute(
 internal fun LoginScreen(
     modifier: Modifier = Modifier,
     onLoginSuccess: () -> Unit,
+    loginUiState: LoginUiState,
+    onGoogleLogin: (String) -> Unit,
 ) {
+    LaunchedEffect(loginUiState) {
+        if (loginUiState is LoginUiState.Success) {
+            onLoginSuccess()
+        }
+        if (loginUiState is LoginUiState.SignUp) {
+            Log.d(TAG, "Sign up: ${loginUiState.userInfo}")
+        }
+    }
+
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val launcher = rememberLauncherForActivityResult(
@@ -65,6 +84,7 @@ internal fun LoginScreen(
                         val scope = "oauth2:https://www.googleapis.com/auth/userinfo.profile"
                         val token = GoogleAuthUtil.getToken(context, accountName, scope)
                         Log.d("GoogleLogin", "Access Token: $token")
+                        onGoogleLogin(token)
                     } catch (e: Exception) {
                         Log.e("GoogleLogin", "Error: $e")
                     }
