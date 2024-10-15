@@ -28,8 +28,8 @@ import androidx.compose.ui.graphics.Color
  *  Gray07: #212529
  */
 
-val Yellow01 = Color(0xFFFFB83B)
-val Yellow02 = Color(0xFFFFF1D8)
+val Yellow00 = Color(0xFFFFB83B)
+val Yellow01 = Color(0xFFFFF1D8)
 
 val Navy10 = Color(0xFF0B1217)
 val Navy00 = Color(0xFF16242E)
