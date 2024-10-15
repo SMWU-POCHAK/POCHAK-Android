@@ -1,9 +1,8 @@
 package com.site.pochak.app.core.network.di
 
-import com.site.pochak.app.core.network.BaseUrlRetrofit
-import com.site.pochak.app.core.network.BaseUrlV2Retrofit
 import com.site.pochak.app.core.network.BuildConfig
 import com.site.pochak.app.core.network.service.LoginService
+import com.site.pochak.app.core.network.service.ProfileService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -39,7 +38,6 @@ internal object NetworkModule {
             )
             .build()
 
-    @BaseUrlRetrofit
     @Provides
     @Singleton
     fun providesPochakRetrofit(
@@ -52,21 +50,4 @@ internal object NetworkModule {
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
             .build()
 
-    @BaseUrlV2Retrofit
-    @Provides
-    @Singleton
-    fun providesPochakV2Retrofit(
-        json: Json,
-        okHttpCallFactory: Call.Factory
-    ): Retrofit =
-        Retrofit.Builder()
-            .baseUrl(BuildConfig.BACKEND_BASE_URL_V2)
-            .callFactory(okHttpCallFactory)
-            .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
-            .build()
-
-    @Provides
-    @Singleton
-    fun providesLoginService(@BaseUrlRetrofit retrofit: Retrofit): LoginService =
-        retrofit.create(LoginService::class.java)
 }
