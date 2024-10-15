@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="core_ui_profile_name_title">이름</string>
+    <string name="core_ui_profile_name_hint">이름을 입력해주세요.</string>
+    <string name="core_ui_profile_handle_title">닉네임</string>
+    <string name="core_ui_profile_handle_hint">닉네임을 입력해주세요.</string>
+    <string name="core_ui_profile_message_title">소개</string>
+    <string name="core_ui_profile_message_hint">소개를 입력해주세요.</string>
+</resources>
