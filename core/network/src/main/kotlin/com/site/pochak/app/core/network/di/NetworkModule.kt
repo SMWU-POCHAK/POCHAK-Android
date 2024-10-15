@@ -50,4 +50,13 @@ internal object NetworkModule {
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
             .build()
 
+    @Provides
+    @Singleton
+    fun providesLoginService(retrofit: Retrofit): LoginService =
+        retrofit.create(LoginService::class.java)
+
+    @Provides
+    @Singleton
+    fun providesProfileService(retrofit: Retrofit): ProfileService =
+        retrofit.create(ProfileService::class.java)
 }
