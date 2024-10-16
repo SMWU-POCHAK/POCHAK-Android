@@ -4,6 +4,7 @@ import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavOptions
 import androidx.navigation.compose.composable
+import com.site.pochak.app.core.network.model.LoginInfo
 import com.site.pochak.app.feature.login.LoginRoute
 import kotlinx.serialization.Serializable
 
@@ -11,8 +12,14 @@ import kotlinx.serialization.Serializable
 
 fun NavController.navigateToLogin(navOptions: NavOptions? = null) = navigate(LoginRoute, navOptions)
 
-fun NavGraphBuilder.loginScreen(onLoginSuccess: () -> Unit) {
+fun NavGraphBuilder.loginScreen(
+    onLoginSuccess: () -> Unit,
+    navigateToSignUp: (String) -> Unit,
+) {
     composable<LoginRoute> {
-        LoginRoute(onLoginSuccess = onLoginSuccess)
+        LoginRoute(
+            onLoginSuccess = onLoginSuccess,
+            navigateToSignUp = navigateToSignUp,
+        )
     }
 }

@@ -1,8 +1,13 @@
 package com.site.pochak.app.ui
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -28,15 +33,19 @@ fun PochakApp(
     modifier: Modifier = Modifier,
 ) {
     val currentDestination = appState.currentDestination
+    val hasToShowNavigationBar = appState.topLevelDestinations.any {
+        currentDestination?.hierarchy?.any { destination -> destination.hasRoute(it.route) } == true
+    }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
         bottomBar = {
-            if (currentDestination?.hasRoute(LoginRoute::class) == false) {
+            if (hasToShowNavigationBar) {
                 PochakNavigationBar {
                     appState.topLevelDestinations.forEach { destination ->
-                        val selected =
-                            currentDestination.hierarchy.any { it.hasRoute(destination.route) }
+                        val selected = currentDestination?.hierarchy?.any {
+                            it.hasRoute(destination.route)
+                        } ?: false
 
                         NavigationBarItem(
                             selected = selected,

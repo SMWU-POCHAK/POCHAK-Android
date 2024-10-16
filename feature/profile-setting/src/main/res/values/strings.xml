@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_profile_setting_title">프로필 설정</string>
+    <string name="feature_profile_setting_save">완료</string>
+    <string name="feature_profile_setting_name_title">이름</string>
+    <string name="feature_profile_setting_name_hint">이름을 입력해주세요.</string>
+    <string name="feature_profile_setting_handle_title">닉네임</string>
+    <string name="feature_profile_setting_handle_hint">닉네임을 입력해주세요.</string>
+    <string name="feature_profile_setting_message_title">소개</string>
+    <string name="feature_profile_setting_message_hint">소개를 입력해주세요.</string>
+</resources>

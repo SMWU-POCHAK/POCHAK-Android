@@ -31,6 +31,7 @@ android {
 dependencies {
     implementation(projects.core.ui)
     implementation(projects.core.designsystem)
+    implementation(projects.core.data)
 
     implementation(projects.feature.login)
     implementation(projects.feature.home)
@@ -38,6 +39,7 @@ dependencies {
     implementation(projects.feature.camera)
     implementation(projects.feature.alarm)
     implementation(projects.feature.profile)
+    implementation(projects.feature.profileSetting)
 
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.material3.adaptive)
