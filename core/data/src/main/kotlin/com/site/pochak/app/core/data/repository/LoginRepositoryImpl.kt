@@ -7,9 +7,9 @@ import javax.inject.Inject
 
 class LoginRepositoryImpl @Inject constructor(
     private val loginService: LoginService
-) {
+): LoginRepository {
 
-    suspend fun googleLogin(accessToken: String) =
+    override suspend fun googleLogin(accessToken: String) =
         loginService.googleLogin(accessToken)
 
 }

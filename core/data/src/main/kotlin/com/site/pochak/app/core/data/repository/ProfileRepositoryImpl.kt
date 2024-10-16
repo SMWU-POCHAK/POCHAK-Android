@@ -5,8 +5,8 @@ import javax.inject.Inject
 
 class ProfileRepositoryImpl @Inject constructor(
     private val profileService: ProfileService
-) {
+): ProfileRepository {
 
-    suspend fun checkDuplicateHandle(handle: String): Boolean =
-        profileService.checkDuplicateHandle(handle).isSuccess
+    override suspend fun checkDuplicateHandle(handle: String) =
+        profileService.checkDuplicateHandle(handle)
 }
