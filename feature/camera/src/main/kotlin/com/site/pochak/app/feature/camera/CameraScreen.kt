@@ -92,7 +92,6 @@ internal fun CameraScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top
         ) {
-            // Camera preview
             AndroidView(
                 factory = { ctx ->
                     val previewView = PreviewView(ctx).apply {
@@ -105,8 +104,8 @@ internal fun CameraScreen(
                             zoomState?.let { currentZoomRatio ->
                                 val delta = detector.scaleFactor
                                 val newZoomRatio = currentZoomRatio * delta
-                                cameraControl?.setZoomRatio(newZoomRatio.coerceIn(0.5f, 6f)) // 최대 줌 비율 설정
-                                zoomState = newZoomRatio.coerceIn(0.5f, 6f) // 업데이트된 줌 비율 저장
+                                cameraControl?.setZoomRatio(newZoomRatio.coerceIn(0.5f, 6f))
+                                zoomState = newZoomRatio.coerceIn(0.5f, 6f)
                             }
                             return true
                         }
@@ -137,8 +136,6 @@ internal fun CameraScreen(
                     .aspectRatio(3f / 4f)
             )
 
-            Spacer(modifier = Modifier.height(60.dp))
-
             // Capture Button and Flash Toggle
             CaptureAndFlashButton(
                 zoomState = zoomState,
@@ -154,15 +151,7 @@ internal fun CameraScreen(
             )
         }
     } else if (permissionChecked && !permissionGranted) {
-        Box(
-            modifier = modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "카메라 권한이 필요합니다.\n설정에서 권한을 허용해주세요.",
-                textAlign = TextAlign.Center,
-            )
-        }
+        PermissionRequiredUI(modifier = modifier)
     }
 }
 
@@ -175,46 +164,59 @@ private fun CaptureAndFlashButton(
 ) {
     Box(
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 40.dp)
+            .fillMaxSize(),
+        contentAlignment = Alignment.Center
     ) {
-        zoomState?.let { zoom ->
-            Text(
-                text = "${"%.1f".format(zoom)}x",
-                modifier = Modifier.align(Alignment.CenterStart)
-            )
-        }
-
-        IconButton(
-            onClick = onCapture,
-            modifier = Modifier
-                .align(Alignment.Center)
-                .size(62.dp)
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(60.dp)
         ) {
-            Icon(
-                painter = painterResource(id = R.drawable.ic_capture_button),
-                contentDescription = "Camera Icon",
-                modifier = Modifier.size(62.dp),
-                tint = Color.Unspecified
-            )
-        }
+            zoomState?.let { zoom ->
+                Text(
+                    text = "${"%.1f".format(zoom)}x",
+                )
+            }
 
-        IconButton(
-            onClick = onToggleFlash,
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .size(48.dp)
-                .padding(end = 16.dp) // Adjust padding as needed
-        ) {
-            Icon(
-                painter = painterResource(
-                    id = if (flashOn) R.drawable.ic_flash_on else R.drawable.ic_flash_off
-                ),
-                contentDescription = "Flash Icon",
-                modifier = Modifier.size(48.dp),
-                tint = Color.Unspecified
-            )
+            IconButton(
+                onClick = onCapture,
+                modifier = Modifier
+                    .size(62.dp)
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_capture_button),
+                    contentDescription = "Camera Icon",
+                    modifier = Modifier.size(62.dp),
+                    tint = Color.Unspecified
+                )
+            }
+
+            IconButton(
+                onClick = onToggleFlash,
+                modifier = Modifier
+                    .size(34.dp)
+            ) {
+                Icon(
+                    painter = painterResource(
+                        id = if (flashOn) R.drawable.ic_flash_on else R.drawable.ic_flash_off
+                    ),
+                    contentDescription = "Flash Icon",
+                    tint = Color.Unspecified
+                )
+            }
         }
+    }
+}
+
+@Composable
+private fun PermissionRequiredUI(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = "카메라 권한이 필요합니다.\n설정에서 권한을 허용해주세요.",
+            textAlign = TextAlign.Center,
+        )
     }
 }
 
