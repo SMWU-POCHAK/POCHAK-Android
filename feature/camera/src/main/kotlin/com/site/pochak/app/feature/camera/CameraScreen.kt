@@ -53,6 +53,7 @@ internal fun CameraRoute(
         navigateToUpload = navigateToUpload
     )
 }
+
 @Composable
 internal fun CameraScreen(
     modifier: Modifier = Modifier,
@@ -65,9 +66,10 @@ internal fun CameraScreen(
     var cameraControl by remember { mutableStateOf<CameraControl?>(null) }
     var zoomState by remember { mutableStateOf<Float?>(null) }
     var imageCapture by remember { mutableStateOf<ImageCapture?>(null) }
+    var flashOn by remember { mutableStateOf<Boolean>(false) }  // Flash state
 
     LaunchedEffect(Unit) {
-        if (!permissionChecked) { // 권한 확인 완료 여부 확인
+        if (!permissionChecked) {
             permissionGranted = ContextCompat.checkSelfPermission(
                 context,
                 Manifest.permission.CAMERA
@@ -80,11 +82,11 @@ internal fun CameraScreen(
                     0
                 )
             }
-            permissionChecked = true // 권한 확인 완료로 설정
+            permissionChecked = true
         }
     }
 
-    if (permissionChecked && permissionGranted) { // 권한 확인 완료되고, 권한이 허가된 경우
+    if (permissionChecked && permissionGranted) {
         Column(
             modifier = modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -137,37 +139,19 @@ internal fun CameraScreen(
 
             Spacer(modifier = Modifier.height(60.dp))
 
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 40.dp)
-            ) {
-                zoomState?.let { zoom ->
-                    Text(
-                        text = "${"%.1f".format(zoom)}x",
-                        modifier = Modifier
-                            .align(Alignment.CenterStart)
-                    )
+            // Capture Button and Flash Toggle
+            CaptureAndFlashButton(
+                zoomState = zoomState,
+                flashOn = flashOn,
+                onCapture = {
+                    takePhoto(context as Activity, imageCapture, flashOn) {
+                        navigateToUpload() // Navigate to upload screen
+                    }
+                },
+                onToggleFlash = {
+                    flashOn = !flashOn
                 }
-
-                IconButton(
-                    onClick = {
-                        takePhoto(context as Activity, imageCapture) {
-                            navigateToUpload() // Navigate to upload screen
-                        }
-                    },
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .size(62.dp)
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_capture_button),
-                        contentDescription = "Camera Icon",
-                        modifier = Modifier.size(62.dp),
-                        tint = Color.Unspecified // 클릭 상태에 따라 색상 변경
-                    )
-                }
-            }
+            )
         }
     } else if (permissionChecked && !permissionGranted) {
         Box(
@@ -177,6 +161,58 @@ internal fun CameraScreen(
             Text(
                 text = "카메라 권한이 필요합니다.\n설정에서 권한을 허용해주세요.",
                 textAlign = TextAlign.Center,
+            )
+        }
+    }
+}
+
+@Composable
+private fun CaptureAndFlashButton(
+    zoomState: Float?,
+    flashOn: Boolean,
+    onCapture: () -> Unit,
+    onToggleFlash: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 40.dp)
+    ) {
+        zoomState?.let { zoom ->
+            Text(
+                text = "${"%.1f".format(zoom)}x",
+                modifier = Modifier.align(Alignment.CenterStart)
+            )
+        }
+
+        IconButton(
+            onClick = onCapture,
+            modifier = Modifier
+                .align(Alignment.Center)
+                .size(62.dp)
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_capture_button),
+                contentDescription = "Camera Icon",
+                modifier = Modifier.size(62.dp),
+                tint = Color.Unspecified
+            )
+        }
+
+        IconButton(
+            onClick = onToggleFlash,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .size(48.dp)
+                .padding(end = 16.dp) // Adjust padding as needed
+        ) {
+            Icon(
+                painter = painterResource(
+                    id = if (flashOn) R.drawable.ic_flash_on else R.drawable.ic_flash_off
+                ),
+                contentDescription = "Flash Icon",
+                modifier = Modifier.size(48.dp),
+                tint = Color.Unspecified
             )
         }
     }
@@ -240,6 +276,7 @@ private fun setCamera(
 private fun takePhoto(
     activity: Activity,
     imageCapture: ImageCapture?,
+    flashOn: Boolean,
     onCapture: () -> Unit
 ) {
     val outputDirectory = activity.cacheDir
@@ -254,6 +291,11 @@ private fun takePhoto(
 
     imageCapture?.let {
         // Set flash mode here before taking the picture
+        when (flashOn) {
+            true -> it.flashMode = ImageCapture.FLASH_MODE_ON
+            false -> it.flashMode = ImageCapture.FLASH_MODE_OFF
+        }
+
         it.takePicture(
             outputOptions,
             ContextCompat.getMainExecutor(activity),
