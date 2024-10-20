@@ -13,4 +13,8 @@ object PochakIcons {
     val AlarmFilled = R.drawable.ic_alarm_filled
     val Profile = R.drawable.ic_profile
     val ProfileFilled = R.drawable.ic_profile_filled
+    val CaptureButton = R.drawable.ic_capture_button
+    val FlashOn = R.drawable.ic_flash_on
+    val FlashOff = R.drawable.ic_flash_off
+    val Search = R.drawable.ic_search
 }

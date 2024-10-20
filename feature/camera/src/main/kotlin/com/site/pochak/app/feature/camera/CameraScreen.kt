@@ -2,7 +2,6 @@ package com.site.pochak.app.feature.camera
 
 import android.Manifest
 import android.app.Activity
-import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -36,6 +35,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
+import com.site.pochak.app.core.designsystem.icon.PochakIcons
 import java.io.File
 import java.io.FileOutputStream
 
@@ -183,7 +183,7 @@ private fun CaptureAndFlashButton(
                     .size(62.dp)
             ) {
                 Icon(
-                    painter = painterResource(id = R.drawable.ic_capture_button),
+                    painter = painterResource(id = PochakIcons.CaptureButton),
                     contentDescription = "Camera Icon",
                     modifier = Modifier.size(62.dp),
                     tint = Color.Unspecified
@@ -197,7 +197,7 @@ private fun CaptureAndFlashButton(
             ) {
                 Icon(
                     painter = painterResource(
-                        id = if (flashOn) R.drawable.ic_flash_on else R.drawable.ic_flash_off
+                        id = if (flashOn) PochakIcons.FlashOn else PochakIcons.FlashOff
                     ),
                     contentDescription = "Flash Icon",
                     tint = Color.Unspecified
