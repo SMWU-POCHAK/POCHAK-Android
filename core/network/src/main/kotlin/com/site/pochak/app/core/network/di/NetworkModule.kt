@@ -1,6 +1,8 @@
 package com.site.pochak.app.core.network.di
 
 import com.site.pochak.app.core.network.BuildConfig
+import com.site.pochak.app.core.network.service.LoginService
+import com.site.pochak.app.core.network.service.ProfileService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -48,4 +50,14 @@ internal object NetworkModule {
             .callFactory(okHttpCallFactory)
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
             .build()
+
+    @Provides
+    @Singleton
+    fun providesLoginService(retrofit: Retrofit): LoginService =
+        retrofit.create(LoginService::class.java)
+
+    @Provides
+    @Singleton
+    fun providesProfileService(retrofit: Retrofit): ProfileService =
+        retrofit.create(ProfileService::class.java)
 }
