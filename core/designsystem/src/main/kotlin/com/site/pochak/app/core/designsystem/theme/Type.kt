@@ -91,7 +91,7 @@ internal val PochakTypography = Typography(
         fontFamily = Pretendard,
         fontWeight = FontWeight.Medium,
         fontSize = 16.sp,
-        lineHeight = 24.sp,
+        lineHeight = 22.sp,
         letterSpacing = 0.sp
     ),
     bodyMedium = TextStyle(
