@@ -38,5 +38,5 @@ interface LoginService {
         @Query("socialType") socialType: String,
         // 애플 리프레쉬 토큰 (구글에는 해당되지 않음)
         @Query("socialRefreshToken") socialRefreshToken: String? = null
-    ): NetworkResponse<Unit>
+    ): NetworkResponse<NetworkLoginInfo>
 }
