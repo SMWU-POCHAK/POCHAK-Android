@@ -32,10 +32,12 @@ import com.google.android.gms.auth.GoogleAuthUtil
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
+import com.site.pochak.app.core.network.model.NetworkLoginInfo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
 
 private val TAG = "LoginScreen"
 
@@ -44,14 +46,17 @@ internal fun LoginRoute(
     modifier: Modifier = Modifier,
     viewModel: LoginViewModel = hiltViewModel(),
     navigateToHome: () -> Unit,
+    navigateToSignUp: (String) -> Unit,
 ) {
     val loginUiState by viewModel.loginUiState.collectAsStateWithLifecycle()
 
     LoginScreen(
         modifier = modifier,
         navigateToHome = navigateToHome,
+        navigateToSignUp = navigateToSignUp,
         loginUiState = loginUiState,
-        onGoogleLogin = viewModel::googleLogin
+        onGoogleLogin = viewModel::googleLogin,
+        resetLoginUiState = viewModel::resetLoginUiState
     )
 }
 
@@ -59,8 +64,10 @@ internal fun LoginRoute(
 internal fun LoginScreen(
     modifier: Modifier = Modifier,
     navigateToHome: () -> Unit,
+    navigateToSignUp: (String) -> Unit,
     loginUiState: LoginUiState,
-    onGoogleLogin: (String) -> Unit
+    onGoogleLogin: (String) -> Unit,
+    resetLoginUiState: () -> Unit,
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -74,7 +81,16 @@ internal fun LoginScreen(
         when (loginUiState) {
             LoginUiState.Success -> navigateToHome()
             is LoginUiState.Error -> Log.e(TAG, "Login Error: ${loginUiState.message}")
-            is LoginUiState.SignUp -> Unit
+            is LoginUiState.SignUp -> {
+                navigateToSignUp(
+                    Json.encodeToString(
+                        NetworkLoginInfo.serializer(),
+                        loginUiState.loginInfo
+                    )
+                )
+                resetLoginUiState()
+            }
+
             else -> Unit
         }
     }
@@ -92,7 +108,7 @@ internal fun LoginScreen(
         )
 
         if (loginUiState is LoginUiState.Loading) {
-            CircularProgressIndicator()
+            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
         }
     }
 }

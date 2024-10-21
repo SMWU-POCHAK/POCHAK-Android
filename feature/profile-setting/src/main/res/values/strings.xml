@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_profile_setting_title">프로필 설정</string>
+    <string name="feature_profile_setting_save">완료</string>
+    <string name="feature_profile_setting_name_title">닉네임</string>
+    <string name="feature_profile_setting_name_hint">닉네임을 입력해주세요.</string>
+    <string name="feature_profile_setting_name_regex">최대 15자, 공백으로 시작 불가</string>
+    <string name="feature_profile_setting_handle_title">아이디</string>
+    <string name="feature_profile_setting_handle_hint">아이디를 입력해주세요.</string>
+    <string name="feature_profile_setting_handle_regex">최대 15자, 대소문자, 숫자, _(언더바), .(마침표)</string>
+    <string name="feature_profile_setting_message_title">소개</string>
+    <string name="feature_profile_setting_message_hint">소개를 입력해주세요.</string>
+    <string name="feature_profile_setting_message_regex">최대 50자, 3줄 이내</string>
+</resources>

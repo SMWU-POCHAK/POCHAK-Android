@@ -7,12 +7,19 @@ import androidx.navigation.compose.composable
 import com.site.pochak.app.feature.login.LoginRoute
 import kotlinx.serialization.Serializable
 
-@Serializable data object LoginRoute
+@Serializable
+data object LoginRoute
 
 fun NavController.navigateToLogin(navOptions: NavOptions? = null) = navigate(LoginRoute, navOptions)
 
-fun NavGraphBuilder.loginScreen(onLoginSuccess: () -> Unit) {
+fun NavGraphBuilder.loginScreen(
+    navigateToHome: () -> Unit,
+    navigateToSignUp: (String) -> Unit,
+) {
     composable<LoginRoute> {
-        LoginRoute(navigateToHome = onLoginSuccess)
+        LoginRoute(
+            navigateToHome = navigateToHome,
+            navigateToSignUp = navigateToSignUp,
+        )
     }
 }
