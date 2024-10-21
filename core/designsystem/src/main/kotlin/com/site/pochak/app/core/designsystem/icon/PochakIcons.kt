@@ -17,4 +17,5 @@ object PochakIcons {
     val FlashOn = R.drawable.ic_flash_on
     val FlashOff = R.drawable.ic_flash_off
     val Search = R.drawable.ic_search
+    val Delete = R.drawable.ic_delete
 }

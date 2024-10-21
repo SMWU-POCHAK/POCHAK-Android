@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="feature_camera_title">카메라</string>
+    <string name="feature_camera_upload">업로드</string>
+    <string name="feature_camera_input_caption">내용 입력하기</string>
+    <string name="feature_camera_tag">태그하기</string>
+    // 태그할 친구를 입력하세요
+    <string name="feature_camera_tag_friend">태그할 친구를 입력하세요.</string>
 </resources>
