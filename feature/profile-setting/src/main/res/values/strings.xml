@@ -11,4 +11,9 @@
     <string name="feature_profile_setting_message_title">소개</string>
     <string name="feature_profile_setting_message_hint">소개를 입력해주세요.</string>
     <string name="feature_profile_setting_message_regex">최대 50자, 3줄 이내</string>
+    <string name="feature_profile_setting_back_title">프로필 설정을 취소하고\n페이지를 나갈까요?</string>
+    <string name="feature_profile_setting_back_message">페이지를 벗어나면 현재 입력된 내용은\n저장되지 않으며, 모두 사라집니다.</string>
+    <string name="feature_profile_setting_back_cancel">나가기</string>
+    <string name="feature_profile_setting_back_confirm">계속하기</string>
+
 </resources>

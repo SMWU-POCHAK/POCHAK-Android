@@ -1,6 +1,6 @@
 package com.site.pochak.app.feature.profile.setting
 
-import android.util.Log
+import androidx.activity.compose.BackHandler
 import androidx.annotation.StringRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -48,6 +48,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.site.pochak.app.core.designsystem.component.BackButton
 import com.site.pochak.app.core.designsystem.component.HorizontalPadding
+import com.site.pochak.app.core.designsystem.component.PochakAlertDialog
 import com.site.pochak.app.core.designsystem.component.PochakTopAppBar
 import com.site.pochak.app.core.designsystem.theme.Gray01
 import com.site.pochak.app.core.designsystem.theme.Gray03
@@ -84,6 +85,12 @@ internal fun ProfileSettingScreen(
     checkHandle: (String) -> Unit,
     resetCheckHandle: () -> Unit,
 ) {
+    var backPressed by remember { mutableStateOf(false) }
+
+    BackHandler {
+        backPressed = true
+    }
+
     Box(
         modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.Center,
@@ -94,18 +101,33 @@ internal fun ProfileSettingScreen(
 
         ProfileSettingContent(
             modifier = modifier,
-            onBack = onBack,
+            onBackPressed = { backPressed = true },
             checkHandleUiState = checkHandleUiState,
             checkHandle = checkHandle,
             resetCheckHandle = resetCheckHandle,
         )
+
+        if (backPressed) {
+            PochakAlertDialog(
+                onDismiss = { backPressed = false },
+                titleText = stringResource(R.string.feature_profile_setting_back_title),
+                messageText = stringResource(R.string.feature_profile_setting_back_message),
+                cancelButtonText = stringResource(R.string.feature_profile_setting_back_cancel),
+                confirmButtonText = stringResource(R.string.feature_profile_setting_back_confirm),
+                onConfirmClick = { backPressed = false },
+                onCancelClick = {
+                    backPressed = false
+                    onBack()
+                },
+            )
+        }
     }
 }
 
 @Composable
 private fun ProfileSettingContent(
     modifier: Modifier = Modifier,
-    onBack: () -> Unit,
+    onBackPressed: () -> Unit,
     checkHandleUiState: CheckHandleUiState,
     checkHandle: (String) -> Unit,
     resetCheckHandle: () -> Unit,
@@ -144,7 +166,7 @@ private fun ProfileSettingContent(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         PochakTopAppBar(
-            leftContent = { BackButton(onClick = onBack) },
+            leftContent = { BackButton(onClick = onBackPressed) },
             centerContent = { Text(text = stringResource(R.string.feature_profile_setting_title)) },
             rightContent = {
                 IconButton(onClick = {}) {

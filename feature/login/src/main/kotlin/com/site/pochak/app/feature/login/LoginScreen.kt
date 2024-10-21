@@ -78,6 +78,23 @@ internal fun LoginScreen(
     val client = GoogleSignIn.getClient(context, options)
 
     LaunchedEffect(loginUiState) {
+        navigateToSignUp(
+            Json.encodeToString(
+                NetworkLoginInfo.serializer(),
+                NetworkLoginInfo(
+                    id = -1,
+                    socialId = "",
+                    name = "",
+                    email = "",
+                    handle = "",
+                    socialType = "",
+                    accessToken = "",
+                    refreshToken = "",
+                    isNewMember = true
+                )
+            )
+        )
+
         when (loginUiState) {
             LoginUiState.Success -> navigateToHome()
             is LoginUiState.Error -> Log.e(TAG, "Login Error: ${loginUiState.message}")
