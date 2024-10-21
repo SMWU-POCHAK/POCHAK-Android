@@ -1,6 +1,5 @@
 package com.site.pochak.app.feature.login
 
-import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.site.pochak.app.core.data.repository.LoginRepository
@@ -28,6 +27,11 @@ class LoginViewModel @Inject constructor(
 
                 if (response.isSuccess) {
                     val loginInfo = response.result
+
+                    if (loginInfo == null) {
+                        LoginUiState.Error("Result is null")
+                        return@launch
+                    }
 
                     if (loginInfo.isNewMember) {
                         LoginUiState.SignUp(loginInfo)
