@@ -1,6 +1,7 @@
 package com.site.pochak.app.core.data.repository
 
 import android.net.Uri
+import android.util.Log
 import androidx.core.net.toFile
 import com.site.pochak.app.core.network.model.NetworkLoginInfo
 import com.site.pochak.app.core.network.model.NetworkResponse
@@ -8,6 +9,7 @@ import com.site.pochak.app.core.network.service.LoginService
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
+import java.io.File
 import javax.inject.Inject
 
 class LoginRepositoryImpl @Inject constructor(
@@ -19,7 +21,7 @@ class LoginRepositoryImpl @Inject constructor(
 
 
     override suspend fun signUp(
-        profileImage: Uri,
+        profileImage: File,
         name: String,
         email: String,
         handle: String,
@@ -28,16 +30,14 @@ class LoginRepositoryImpl @Inject constructor(
         socialType: String,
         socialRefreshToken: String?
     ): NetworkResponse<NetworkLoginInfo> {
-        val file = profileImage.toFile()
-
         val profileImageBody = RequestBody.create(
             "image/jpeg".toMediaTypeOrNull(),
-            file
+            profileImage
         )
 
         val multiPartBody = MultipartBody.Part.createFormData(
             "profileImage",
-            file.name,
+            profileImage.name,
             profileImageBody
         )
 

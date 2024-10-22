@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import com.site.pochak.app.core.data.repository.LoginRepository
 import com.site.pochak.app.core.data.repository.ProfileRepository
 import com.site.pochak.app.core.network.model.NetworkLoginInfo
 import com.site.pochak.app.feature.profile.setting.navigation.ProfileSettingRoute
@@ -13,12 +14,14 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
+import java.io.File
 import javax.inject.Inject
 
 @HiltViewModel
 class ProfileSettingViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
-    private val profileRepository: ProfileRepository
+    private val loginRepository: LoginRepository,
+    private val profileRepository: ProfileRepository,
 ): ViewModel() {
 
     private val loginInfoKey = "loginInfo"
@@ -27,7 +30,36 @@ class ProfileSettingViewModel @Inject constructor(
     private val loginInfo = savedStateHandle.getStateFlow(
         key = loginInfoKey,
         initialValue = Json.decodeFromString(NetworkLoginInfo.serializer(), route.loginInfoJson)
-    )
+    ).value
+
+    private val _profileSettingUiState = MutableStateFlow<ProfileSettingUiState>(ProfileSettingUiState.Idle)
+    val profileSettingUiState: StateFlow<ProfileSettingUiState> = _profileSettingUiState.asStateFlow()
+
+    fun updateProfile(profileFile: File, name: String, handle: String, message: String) {
+        viewModelScope.launch {
+            _profileSettingUiState.value = ProfileSettingUiState.Loading
+            _profileSettingUiState.value = try {
+                val response = loginRepository.signUp(
+                    profileImage = profileFile,
+                    name = name,
+                    email = loginInfo.email,
+                    handle = handle,
+                    message = message,
+                    socialId = loginInfo.socialId,
+                    socialType = loginInfo.socialType
+                )
+
+                if (response.isSuccess) {
+                    ProfileSettingUiState.Success
+                    // TODO: Access Token 저장
+                } else {
+                    ProfileSettingUiState.Error(response.message)
+                }
+            } catch (e: Exception) {
+                ProfileSettingUiState.Error(e.message ?: "An error occurred")
+            }
+        }
+    }
 
     private val _checkHandleUiState = MutableStateFlow<CheckHandleUiState>(CheckHandleUiState.UnChecked)
     val checkHandleUiState: StateFlow<CheckHandleUiState> = _checkHandleUiState.asStateFlow()
@@ -59,4 +91,11 @@ sealed class CheckHandleUiState {
     data object Loading: CheckHandleUiState()
     data object Checked: CheckHandleUiState()
     data class Error(val message: String): CheckHandleUiState()
+}
+
+sealed class ProfileSettingUiState {
+    data object Idle: ProfileSettingUiState()
+    data object Loading: ProfileSettingUiState()
+    data object Success: ProfileSettingUiState()
+    data class Error(val message: String): ProfileSettingUiState()
 }

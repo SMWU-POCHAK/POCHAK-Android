@@ -8,9 +8,9 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class NetworkLoginInfo(
     val id: Int?,
-    val socialId: String?,
+    val socialId: String,
     val name: String?,
-    val email: String?,
+    val email: String,
     val handle: String?,
     val socialType: String,
     val accessToken: String?,

@@ -1,6 +1,13 @@
 package com.site.pochak.app.feature.profile.setting
 
+import android.app.Activity
+import android.content.Intent
+import android.net.Uri
+import android.provider.MediaStore
+import android.util.Log
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.StringRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -41,11 +48,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil.compose.rememberAsyncImagePainter
+import com.site.pochak.app.core.data.uriToFile
 import com.site.pochak.app.core.designsystem.component.BackButton
 import com.site.pochak.app.core.designsystem.component.HorizontalPadding
 import com.site.pochak.app.core.designsystem.component.PochakAlertDialog
@@ -54,6 +64,7 @@ import com.site.pochak.app.core.designsystem.theme.Gray01
 import com.site.pochak.app.core.designsystem.theme.Gray03
 import com.site.pochak.app.core.designsystem.theme.Gray04
 import com.site.pochak.app.core.designsystem.theme.Yellow01
+import java.io.File
 
 const val TAG = "ProfileSettingScreen"
 
@@ -64,6 +75,7 @@ fun ProfileSettingRoute(
     onBack: () -> Unit,
     viewModel: ProfileSettingViewModel = hiltViewModel(),
 ) {
+    val profileSettingUiState by viewModel.profileSettingUiState.collectAsStateWithLifecycle()
     val checkHandleUiState by viewModel.checkHandleUiState.collectAsStateWithLifecycle()
 
     ProfileSettingScreen(
@@ -73,6 +85,8 @@ fun ProfileSettingRoute(
         checkHandleUiState = checkHandleUiState,
         checkHandle = viewModel::checkHandle,
         resetCheckHandle = viewModel::resetCheckHandleUiState,
+        profileSettingUiState = profileSettingUiState,
+        onUpdateProfile = viewModel::updateProfile,
     )
 }
 
@@ -84,6 +98,8 @@ internal fun ProfileSettingScreen(
     checkHandleUiState: CheckHandleUiState,
     checkHandle: (String) -> Unit,
     resetCheckHandle: () -> Unit,
+    profileSettingUiState: ProfileSettingUiState,
+    onUpdateProfile: (File, String, String, String) -> Unit,
 ) {
     var backPressed by remember { mutableStateOf(false) }
 
@@ -91,11 +107,24 @@ internal fun ProfileSettingScreen(
         backPressed = true
     }
 
+    LaunchedEffect(profileSettingUiState) {
+        when (profileSettingUiState) {
+            ProfileSettingUiState.Success -> navigateToHome()
+            is ProfileSettingUiState.Error ->
+                Log.e(TAG, "ProfileSettingUiState.Error: ${profileSettingUiState.message}")
+
+            else -> Unit
+        }
+    }
+
     Box(
         modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.Center,
     ) {
-        if (checkHandleUiState is CheckHandleUiState.Loading) {
+        if (
+            checkHandleUiState is CheckHandleUiState.Loading ||
+            profileSettingUiState is ProfileSettingUiState.Loading
+        ) {
             CircularProgressIndicator()
         }
 
@@ -105,6 +134,7 @@ internal fun ProfileSettingScreen(
             checkHandleUiState = checkHandleUiState,
             checkHandle = checkHandle,
             resetCheckHandle = resetCheckHandle,
+            onUpdateProfile = onUpdateProfile,
         )
 
         if (backPressed) {
@@ -131,32 +161,59 @@ private fun ProfileSettingContent(
     checkHandleUiState: CheckHandleUiState,
     checkHandle: (String) -> Unit,
     resetCheckHandle: () -> Unit,
+    onUpdateProfile: (File, String, String, String) -> Unit,
 ) {
+    val context = LocalContext.current
+    val scrollState = rememberScrollState()
+
     var name by rememberSaveable { mutableStateOf("") }
     var handle by rememberSaveable { mutableStateOf("") }
     var message by rememberSaveable { mutableStateOf("") }
-
-    val scrollState = rememberScrollState()
+    var profileUri by rememberSaveable { mutableStateOf<Uri?>(null) }
 
     val profileInputsState by remember {
-        derivedStateOf { listOf(name, handle, message) }
+        derivedStateOf { listOf(name, handle, message, profileUri) }
     }
+
+    val takePhotoLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            result.data?.data?.let { profileUri = it } ?: run {
+                Log.e(TAG, "Profile image uri is null")
+            }
+        } else if (result.resultCode != Activity.RESULT_CANCELED) {
+            Log.e(TAG, "Profile image uri is null")
+        }
+    }
+    val takePhotoIntent =
+        Intent(Intent.ACTION_GET_CONTENT, MediaStore.Images.Media.EXTERNAL_CONTENT_URI).apply {
+            type = "image/*"
+            action = Intent.ACTION_GET_CONTENT
+            putExtra(
+                Intent.EXTRA_MIME_TYPES,
+                arrayOf("image/jpeg", "image/png", "image/bmp", "image/webp")
+            )
+            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, false)
+        }
 
     // 완료 버튼 활성화 여부
     var actionEnabled by remember { mutableStateOf(false) }
 
     // 입력값이 모두 채워져 있고, 닉네임 중복 체크가 성공한 경우에만 완료 버튼 활성화
     LaunchedEffect(profileInputsState, checkHandleUiState) {
-        actionEnabled =
-            profileInputsState.all { it.isNotEmpty() }
-                    && checkHandleUiState is CheckHandleUiState.Checked
+        actionEnabled = checkHandleUiState is CheckHandleUiState.Checked &&
+                profileInputsState.all {
+                    when (it) {
+                        is String -> it.isNotEmpty()
+                        else -> it != null
+                    }
+                }
     }
 
     // handle 변경 시, 다시 체크
     LaunchedEffect(handle) {
-        if (checkHandleUiState is CheckHandleUiState.Checked) {
-            resetCheckHandle()
-        }
+        resetCheckHandle()
     }
 
     Column(
@@ -169,7 +226,12 @@ private fun ProfileSettingContent(
             leftContent = { BackButton(onClick = onBackPressed) },
             centerContent = { Text(text = stringResource(R.string.feature_profile_setting_title)) },
             rightContent = {
-                IconButton(onClick = {}) {
+                IconButton(onClick = {
+                    if (actionEnabled) {
+                        val file = uriToFile(profileUri!!, context)
+                        onUpdateProfile(file, name, handle, message)
+                    }
+                }) {
                     Text(
                         text = stringResource(R.string.feature_profile_setting_save),
                         style = MaterialTheme.typography.titleSmall,
@@ -183,22 +245,28 @@ private fun ProfileSettingContent(
             modifier = Modifier
                 .weight(1f)
                 .padding(horizontal = HorizontalPadding)
+                // 키보드가 올라와서 입력 필드가 가려지는 경우, 스크롤 가능하도록
                 .verticalScroll(scrollState),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Spacer(modifier = Modifier.height(40.dp))
 
+            // 프로필 이미지
             Image(
-                painter = painterResource(id = R.drawable.feature_profile_setting_add_profile),
+                painter =
+                if (profileUri == null) painterResource(id = R.drawable.feature_profile_setting_add_profile)
+                else rememberAsyncImagePainter(profileUri),
                 contentDescription = "Profile Image",
                 modifier = Modifier
                     .size(116.dp)
-                    .clip(CircleShape),
+                    .clip(CircleShape)
+                    .clickable { takePhotoLauncher.launch(takePhotoIntent) },
                 contentScale = ContentScale.Crop,
             )
 
             Spacer(modifier = Modifier.height(40.dp))
 
+            // 닉네임
             ProfileInputField(
                 title = R.string.feature_profile_setting_name_title,
                 hint = R.string.feature_profile_setting_name_hint,
@@ -208,6 +276,7 @@ private fun ProfileSettingContent(
                 onValueChange = { name = it },
             )
 
+            // 아이디
             ProfileInputField(
                 title = R.string.feature_profile_setting_handle_title,
                 hint = R.string.feature_profile_setting_handle_hint,
@@ -216,7 +285,7 @@ private fun ProfileSettingContent(
                 value = handle,
                 onValueChange = { handle = it },
             ) {
-                // 닉네임 중복 체크 버튼
+                // 아이디 중복 체크 버튼
                 Image(
                     painter = painterResource(
                         if (checkHandleUiState is CheckHandleUiState.Checked) {
@@ -236,6 +305,7 @@ private fun ProfileSettingContent(
                 )
             }
 
+            // 소개
             ProfileInputField(
                 title = R.string.feature_profile_setting_message_title,
                 hint = R.string.feature_profile_setting_message_hint,
