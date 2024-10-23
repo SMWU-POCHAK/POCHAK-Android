@@ -15,6 +15,7 @@ android {
 dependencies {
     api(projects.core.common)
     api(projects.core.model)
+    api(projects.core.datastore)
 
     implementation(libs.okhttp.logging)
     implementation(libs.retrofit.core)
