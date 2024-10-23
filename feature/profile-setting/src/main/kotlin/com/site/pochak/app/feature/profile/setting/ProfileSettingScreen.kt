@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import android.provider.MediaStore
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -209,6 +210,12 @@ private fun ProfileSettingContent(
                         else -> it != null
                     }
                 }
+    }
+
+    LaunchedEffect(checkHandleUiState) {
+        if (checkHandleUiState is CheckHandleUiState.Error) {
+            Toast.makeText(context, checkHandleUiState.message, Toast.LENGTH_SHORT).show()
+        }
     }
 
     // handle 변경 시, 다시 체크

@@ -30,6 +30,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.android.gms.auth.GoogleAuthUtil
 import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
 import com.site.pochak.app.core.network.model.NetworkLoginInfo
@@ -39,7 +40,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 
-private val TAG = "LoginScreen"
+private const val TAG = "LoginScreen"
 
 @Composable
 internal fun LoginRoute(
@@ -77,7 +78,19 @@ internal fun LoginScreen(
         .build()
     val client = GoogleSignIn.getClient(context, options)
 
+    // 구글 로그인 상태 확인(자동 로그인)
+    LaunchedEffect(Unit) {
+        val account = GoogleSignIn.getLastSignedInAccount(context)
+
+        account?.let {
+            launchAccessTokenScope(context, account, coroutineScope) { token ->
+                onGoogleLogin(token)
+            }
+        }
+    }
+
     LaunchedEffect(loginUiState) {
+        Log.d(TAG, "LoginUiState: $loginUiState")
         when (loginUiState) {
             LoginUiState.Success -> navigateToHome()
             is LoginUiState.Error -> Log.e(TAG, "Login Error: ${loginUiState.message}")
@@ -180,21 +193,32 @@ private fun rememberGoogleLoginLauncher(
     try {
         val account = task.getResult(ApiException::class.java)
 
-        val accountName = account?.email ?: return@rememberLauncherForActivityResult
-
-        coroutineScope.launch {
-            withContext(Dispatchers.IO) {
-                try {
-                    val scope = "oauth2:https://www.googleapis.com/auth/userinfo.profile"
-                    val token = GoogleAuthUtil.getToken(context, accountName, scope)
-                    Log.d(TAG, "Access Token: $token")
-                    onGoogleLogin(token)
-                } catch (e: Exception) {
-                    Log.e(TAG, "Access Token Error: $e")
-                }
-            }
+        launchAccessTokenScope(context, account, coroutineScope) { token ->
+            onGoogleLogin(token)
         }
     } catch (e: ApiException) {
         Log.d(TAG, "Google sign in failed", e)
+    }
+}
+
+private fun launchAccessTokenScope(
+    context: Context,
+    account: GoogleSignInAccount,
+    coroutineScope: CoroutineScope,
+    onSuccess: (String) -> Unit,
+) {
+    val accountName = account.email ?: return
+
+    coroutineScope.launch {
+        withContext(Dispatchers.IO) {
+            try {
+                val scope = "oauth2:https://www.googleapis.com/auth/userinfo.profile"
+                val token = GoogleAuthUtil.getToken(context, accountName, scope)
+                Log.d(TAG, "Access Token: $token")
+                onSuccess(token)
+            } catch (e: Exception) {
+                Log.e(TAG, "Access Token Error: $e")
+            }
+        }
     }
 }

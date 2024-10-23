@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.site.pochak.app.core.data.repository.LoginRepository
 import com.site.pochak.app.core.data.repository.ProfileRepository
+import com.site.pochak.app.core.datastore.TokenManager
 import com.site.pochak.app.core.network.model.NetworkLoginInfo
 import com.site.pochak.app.feature.profile.setting.navigation.ProfileSettingRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -19,12 +20,15 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ProfileSettingViewModel @Inject constructor(
-    private val savedStateHandle: SavedStateHandle,
+    savedStateHandle: SavedStateHandle,
     private val loginRepository: LoginRepository,
     private val profileRepository: ProfileRepository,
+    private val tokenManager: TokenManager
 ): ViewModel() {
 
     private val loginInfoKey = "loginInfo"
+    private val CHECK_HANDLE_SUCCESS_CODE = "MEMBER2001"
+
 
     private val route = savedStateHandle.toRoute<ProfileSettingRoute>()
     private val loginInfo = savedStateHandle.getStateFlow(
@@ -50,8 +54,28 @@ class ProfileSettingViewModel @Inject constructor(
                 )
 
                 if (response.isSuccess) {
+                    val result = response.result
+
+                    if (result == null) {
+                        ProfileSettingUiState.Error("Result is null")
+                    } else {
+                        // 토큰 저장
+                        val accessToken = result.accessToken
+                        val refreshToken = result.refreshToken
+                        if (accessToken != null) {
+                            tokenManager.saveAccessToken(accessToken)
+                        }
+                        else if (refreshToken != null) {
+                            tokenManager.saveRefreshToken(refreshToken)
+                        }
+                        else {
+                            ProfileSettingUiState.Error("Token is null")
+                        }
+
+                        ProfileSettingUiState.Success
+                    }
+
                     ProfileSettingUiState.Success
-                    // TODO: Access Token 저장
                 } else {
                     ProfileSettingUiState.Error(response.message)
                 }
@@ -71,7 +95,12 @@ class ProfileSettingViewModel @Inject constructor(
                 val response = profileRepository.checkDuplicateHandle(handle)
 
                 if (response.isSuccess) {
-                    CheckHandleUiState.Checked
+                    if (response.code == "MEMBER2001") {
+                        CheckHandleUiState.Checked
+                    }
+                    else {
+                        CheckHandleUiState.Error("중복되는 아이디입니다.")
+                    }
                 } else {
                     CheckHandleUiState.Error(response.message)
                 }

@@ -1,8 +1,5 @@
 package com.site.pochak.app.core.data.repository
 
-import android.net.Uri
-import android.util.Log
-import androidx.core.net.toFile
 import com.site.pochak.app.core.network.model.NetworkLoginInfo
 import com.site.pochak.app.core.network.model.NetworkResponse
 import com.site.pochak.app.core.network.service.LoginService
@@ -52,5 +49,11 @@ class LoginRepositoryImpl @Inject constructor(
             socialRefreshToken = socialRefreshToken
         )
     }
+
+    override suspend fun logout(): NetworkResponse<Unit> =
+        loginService.logout()
+
+    override suspend fun signout(): NetworkResponse<Unit> =
+        loginService.signout()
 
 }

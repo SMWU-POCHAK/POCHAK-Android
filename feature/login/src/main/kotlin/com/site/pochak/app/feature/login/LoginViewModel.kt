@@ -3,6 +3,7 @@ package com.site.pochak.app.feature.login
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.site.pochak.app.core.data.repository.LoginRepository
+import com.site.pochak.app.core.datastore.TokenManager
 import com.site.pochak.app.core.network.model.NetworkLoginInfo
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,7 +14,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
-    private val loginRepository: LoginRepository
+    private val loginRepository: LoginRepository,
+    private val tokenManager: TokenManager
 ) : ViewModel() {
 
     private val _loginUiState = MutableStateFlow<LoginUiState>(LoginUiState.Login)
@@ -36,6 +38,9 @@ class LoginViewModel @Inject constructor(
                     if (loginInfo.isNewMember) {
                         LoginUiState.SignUp(loginInfo)
                     } else {
+                        // TokenManager에 AccessToken과 RefreshToken 저장
+                        tokenManager.saveAccessToken(loginInfo.accessToken!!)
+                        tokenManager.saveRefreshToken(loginInfo.refreshToken!!)
                         LoginUiState.Success
                     }
                 } else {
