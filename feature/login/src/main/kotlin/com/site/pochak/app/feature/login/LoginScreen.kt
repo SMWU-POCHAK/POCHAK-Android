@@ -166,7 +166,7 @@ private fun LoginButton(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "포착 시작하기",
+                text = stringResource(id = R.string.feature_login_login_text),
                 style = MaterialTheme.typography.titleSmall
             )
 
