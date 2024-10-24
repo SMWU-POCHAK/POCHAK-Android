@@ -1,5 +1,6 @@
 package com.site.pochak.app.feature.profile.setting
 
+import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -17,6 +18,8 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import java.io.File
 import javax.inject.Inject
+
+private val TAG = "ProfileSettingViewModel"
 
 @HiltViewModel
 class ProfileSettingViewModel @Inject constructor(
@@ -59,18 +62,14 @@ class ProfileSettingViewModel @Inject constructor(
                     if (result == null) {
                         ProfileSettingUiState.Error("Result is null")
                     } else {
-                        // 토큰 저장
-                        val accessToken = result.accessToken
-                        val refreshToken = result.refreshToken
-                        if (accessToken != null) {
-                            tokenManager.saveAccessToken(accessToken)
+                        if (loginInfo.accessToken == null || loginInfo.refreshToken == null || loginInfo.handle == null) {
+                            Log.e(TAG, "Server Response Error: /google/login response is missing AccessToken, RefreshToken, Handle")
+                            ProfileSettingUiState.Error("AccessToken, RefreshToken, Handle is null")
+                            return@launch
                         }
-                        else if (refreshToken != null) {
-                            tokenManager.saveRefreshToken(refreshToken)
-                        }
-                        else {
-                            ProfileSettingUiState.Error("Token is null")
-                        }
+
+                        // TokenManager에 AccessToken, RefreshToken, Handle 저장
+                        tokenManager.saveUserData(loginInfo.accessToken!!, loginInfo.refreshToken!!, loginInfo.handle!!)
 
                         ProfileSettingUiState.Success
                     }
@@ -95,7 +94,7 @@ class ProfileSettingViewModel @Inject constructor(
                 val response = profileRepository.checkDuplicateHandle(handle)
 
                 if (response.isSuccess) {
-                    if (response.code == "MEMBER2001") {
+                    if (response.code == CHECK_HANDLE_SUCCESS_CODE) {
                         CheckHandleUiState.Checked
                     }
                     else {

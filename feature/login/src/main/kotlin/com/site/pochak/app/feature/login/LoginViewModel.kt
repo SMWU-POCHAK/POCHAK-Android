@@ -1,5 +1,6 @@
 package com.site.pochak.app.feature.login
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.site.pochak.app.core.data.repository.LoginRepository
@@ -11,6 +12,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+private const val TAG = "LoginViewModel"
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
@@ -38,9 +41,15 @@ class LoginViewModel @Inject constructor(
                     if (loginInfo.isNewMember) {
                         LoginUiState.SignUp(loginInfo)
                     } else {
-                        // TokenManager에 AccessToken과 RefreshToken 저장
-                        tokenManager.saveAccessToken(loginInfo.accessToken!!)
-                        tokenManager.saveRefreshToken(loginInfo.refreshToken!!)
+                        if (loginInfo.accessToken == null || loginInfo.refreshToken == null || loginInfo.handle == null) {
+                            Log.e(TAG, "Server Response Error: /google/login response is missing AccessToken, RefreshToken, Handle")
+                            LoginUiState.Error("AccessToken, RefreshToken, Handle is null")
+                            return@launch
+                        }
+
+                        // TokenManager에 AccessToken, RefreshToken, Handle 저장
+                        tokenManager.saveUserData(loginInfo.accessToken!!, loginInfo.refreshToken!!, loginInfo.handle!!)
+
                         LoginUiState.Success
                     }
                 } else {
