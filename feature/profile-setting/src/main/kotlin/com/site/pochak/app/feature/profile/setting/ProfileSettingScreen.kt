@@ -67,7 +67,7 @@ import com.site.pochak.app.core.designsystem.theme.Gray04
 import com.site.pochak.app.core.designsystem.theme.Yellow01
 import java.io.File
 
-const val TAG = "ProfileSettingScreen"
+private const val TAG = "ProfileSettingScreen"
 
 @Composable
 fun ProfileSettingRoute(
