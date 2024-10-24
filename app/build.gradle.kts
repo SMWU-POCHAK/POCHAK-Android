@@ -38,6 +38,7 @@ dependencies {
     implementation(projects.feature.camera)
     implementation(projects.feature.alarm)
     implementation(projects.feature.profile)
+    implementation(projects.feature.profileSetting)
 
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.material3.adaptive)
