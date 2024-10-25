@@ -3,6 +3,7 @@ package com.site.pochak.app.core.network.di
 import com.site.pochak.app.core.network.BuildConfig
 import com.site.pochak.app.core.network.service.LoginService
 import com.site.pochak.app.core.network.service.ProfileService
+import com.site.pochak.app.core.network.token.AuthInterceptor
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -27,7 +28,7 @@ internal object NetworkModule {
 
     @Provides
     @Singleton
-    fun okHttpCallFactory(): Call.Factory =
+    fun okHttpCallFactory(authInterceptor: AuthInterceptor): Call.Factory =
         OkHttpClient.Builder()
             .addInterceptor(
                 HttpLoggingInterceptor()
@@ -37,6 +38,7 @@ internal object NetworkModule {
                         }
                     },
             )
+            .addInterceptor(authInterceptor)
             .build()
 
     @Provides
