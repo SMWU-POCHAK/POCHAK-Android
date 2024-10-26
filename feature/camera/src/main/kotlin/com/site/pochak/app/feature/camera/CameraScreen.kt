@@ -34,6 +34,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import java.io.File
 import java.io.FileOutputStream
@@ -215,7 +216,7 @@ private fun PermissionRequiredUI(modifier: Modifier = Modifier) {
         contentAlignment = Alignment.Center
     ) {
         Text(
-            text = "카메라 권한이 필요합니다.\n설정에서 권한을 허용해주세요.",
+            text = stringResource(id = R.string.feature_camera_permission_camera),
             textAlign = TextAlign.Center,
         )
     }
@@ -226,8 +227,8 @@ private fun PermissionRequiredUI(modifier: Modifier = Modifier) {
  *
  * CameraX API(Preview)를 사용하여 카메라 미리보기 설정
  *
- * @param previewView 카메라 미리보기를 표시할 PreviewView, 카메라의 실시간 영상을 렌더링
- * @param onCameraControlAvailable 카메라 제어 객체(CameraControl), 초기 줌 비율(Float), 이미지 캡처 기능(ImageCapture)을 제공하는 콜백 함수.
+ * @param previewView 카메라 미리보기를 표시할 PreviewView, 실시간 카메라 영상을 렌더링.
+ * @param onCameraControlAvailable CameraControl, 초기 줌 비율(Float), 이미지 캡처 기능(ImageCapture)을 제공하는 콜백 함수.
  */
 private fun setCamera(
     previewView: PreviewView,
@@ -266,12 +267,11 @@ private fun setCamera(
 /**
  * 사진을 캡처하고, 저장된 이미지를 회전한 후 콜백을 호출하는 함수
  *
- * 이 함수는 카메라를 통해 사진을 캡처하고, Exif 정보를 기반으로 이미지를 올바른 방향으로 회전시킨 다음,
- * 회전된 이미지를 캐시 디렉토리에 저장
- * 이전에 저장된 이미지가 존재하는 경우, 삭제 후 새로운 이미지 저장
+ * 카메라를 통해 사진을 캡처하고, Exif 정보를 기반으로 이미지를 올바른 방향으로 회전시킨 다음,
+ * 회전된 이미지를 캐시 디렉토리에 저장, 기존에 저장된 이미지가 존재하는 경우, 삭제 후 새로운 이미지 저장
  *
- * @param activity 현재의 Activity 인스턴스, 이 인스턴스는 사진 캡처 및 파일 작업에 사용
- * @param imageCapture ImageCapture 인스턴스, 이 인스턴스를 통해 사진 캡처 수행
+ * @param activity 현재의 Activity 인스턴스, 사진 캡처 및 파일 작업에 사용
+ * @param imageCapture ImageCapture 인스턴스, 사진 캡처 수행
  * @param onCapture 사진 캡처가 완료된 후 호출되는 콜백 함수
  *
  * @throws ImageCaptureException 사진 캡처 과정에서 오류가 발생한 경우 발생
@@ -320,10 +320,10 @@ private fun takePhoto(
 }
 
 /**
- * Exif 정보를 이용하여 이미지를 회전 처리하고 반환합니다.
+ * Exif 정보를 이용하여 이미지를 회전하고 반환합니다.
  *
  * @param file 회전된 비트맵을 가져올 파일, 절대 경로를 사용하여 이미지 파일을 가져옴
- * @return 회전된 비트맵 반환
+ * @return 회전된 비트맵
  */
 fun getRotatedBitmap(file: File): Bitmap {
     val bitmap = BitmapFactory.decodeFile(file.absolutePath)

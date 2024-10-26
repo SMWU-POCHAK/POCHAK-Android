@@ -143,11 +143,12 @@ private fun CapturedImageAndCaptionField(
                 decorationBox = { innerTextField ->
                     if (caption.isEmpty()) {
                         Text(
+                            modifier = modifier
+                                .align(Alignment.Start),
                             text = stringResource(id = R.string.feature_camera_input_caption),
                             color = Color.Gray,
-                            style = MaterialTheme.typography.bodyLarge,
-                            modifier = modifier
-                                .align(Alignment.Start)
+                            style = MaterialTheme.typography.bodyLarge
+
                         )
                     }
                     innerTextField()
@@ -166,7 +167,6 @@ private fun CapturedImageAndCaptionField(
             )
         }
     }
-
 }
 
 @Composable
@@ -199,8 +199,7 @@ private fun SearchScreen(
                 .height(48.dp)
                 .align(Alignment.TopCenter)
                 .offset(y = 32.dp)
-                .clip(RoundedCornerShape(8.dp))
-                .background(Gray0_5)
+                .background(Gray0_5, shape = RoundedCornerShape(8.dp))
         ) {
             Icon(
                 painter = painterResource(id = PochakIcons.Search),
@@ -222,7 +221,7 @@ private fun SearchScreen(
                             // 포커스되면 searchResults를 업데이트
                             searchResults = listOf(
                                 "태그1", "태그22222222", "태그3", "태그4",
-                                "태그5", "태그2", "태그3", "태그4", "태그5"
+                                "태그5", "태그6", "태그7", "태그8", "태그9"
                             )
                         }
                     },
@@ -264,8 +263,7 @@ private fun SearchScreen(
             modifier = modifier
                 .fillMaxWidth()
                 .padding(top = 84.dp)
-                .clip(RoundedCornerShape(8.dp))
-                .background(Gray02)
+                .background(Gray02, shape = RoundedCornerShape(8.dp))
                 .heightIn(max = 250.dp)
         ) {
             itemsIndexed(searchResults) { index, result ->
@@ -307,11 +305,11 @@ fun SearchResultItem(
                 .padding(vertical = 12.dp)
         ) {
             Image(
-                painter = painterResource(id = PochakIcons.Profile),
-                contentDescription = "profile image",
                 modifier = modifier
                     .size(40.dp)
                     .clip(CircleShape),
+                painter = painterResource(id = PochakIcons.Profile),
+                contentDescription = "profile image",
                 contentScale = ContentScale.Crop
             )
 
@@ -323,11 +321,11 @@ fun SearchResultItem(
                     text = result, style = MaterialTheme.typography.bodySmall, color = Color.Black
                 )
                 Text(
+                    modifier = modifier
+                        .padding(top = 2.dp),
                     text = result,
                     style = MaterialTheme.typography.labelMedium,
                     color = Color.Black,
-                    modifier = modifier
-                        .padding(top = 2.dp)
                 )
             }
         }
@@ -359,14 +357,14 @@ fun SelectedItemView(
         Text(text = item, color = Navy00, style = MaterialTheme.typography.bodySmall)
 
         Image(
-            painter = painterResource(id = PochakIcons.Delete),
-            contentDescription = "profile image",
             modifier = modifier
                 .padding(start = 4.dp)
                 .size(20.dp)
                 .clickable {
                     onDeleteClick(item)
                 },
+            painter = painterResource(id = PochakIcons.Delete),
+            contentDescription = "profile image"
         )
     }
 }
