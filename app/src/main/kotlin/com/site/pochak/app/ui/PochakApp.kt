@@ -19,6 +19,7 @@ import androidx.navigation.NavDestination.Companion.hierarchy
 import com.site.pochak.app.core.designsystem.component.PochakNavigationBar
 import com.site.pochak.app.core.designsystem.theme.Gray03
 import com.site.pochak.app.core.designsystem.theme.Navy00
+import com.site.pochak.app.feature.camera.navigation.UploadRoute
 import com.site.pochak.app.feature.login.navigation.LoginRoute
 import com.site.pochak.app.navigation.PochakNavHost
 
@@ -32,7 +33,9 @@ fun PochakApp(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         bottomBar = {
-            if (currentDestination?.hasRoute(LoginRoute::class) == false) {
+            if (currentDestination?.hasRoute(LoginRoute::class) == false &&
+                currentDestination?.hasRoute(UploadRoute::class) == false
+            ) {
                 PochakNavigationBar {
                     appState.topLevelDestinations.forEach { destination ->
                         val selected =
