@@ -124,3 +124,25 @@ fun PochakAlertDialogPreview() {
         cancelButtonText = "Negative",
     )
 }
+
+
+@Preview
+@Composable
+fun PochakAlertDialogPreviewWithoutButtons() {
+    PochakAlertDialog(
+        onDismiss = {},
+        titleText = "Title",
+        messageText = "Message",
+    )
+}
+
+@Preview
+@Composable
+fun PochakAlertDialogPreviewWithoutCancel() {
+    PochakAlertDialog(
+        onDismiss = {},
+        titleText = "Title",
+        messageText = "Message",
+        confirmButtonText = "Positive",
+    )
+}
