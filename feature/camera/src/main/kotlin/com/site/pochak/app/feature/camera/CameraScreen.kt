@@ -35,7 +35,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
-import com.site.pochak.app.core.designsystem.icon.PochakIcons
 import java.io.File
 import java.io.FileOutputStream
 
@@ -66,7 +65,7 @@ internal fun CameraScreen(
     var cameraControl by remember { mutableStateOf<CameraControl?>(null) }
     var zoomState by remember { mutableStateOf<Float?>(null) }
     var imageCapture by remember { mutableStateOf<ImageCapture?>(null) }
-    var flashOn by remember { mutableStateOf<Boolean>(false) }  // Flash state
+    var flashOn by remember { mutableStateOf<Boolean>(false) }
 
     LaunchedEffect(Unit) {
         if (!permissionChecked) {
@@ -93,6 +92,9 @@ internal fun CameraScreen(
             verticalArrangement = Arrangement.Top
         ) {
             AndroidView(
+                modifier = modifier
+                    .padding(top = 30.dp, start = 20.dp, end = 20.dp)
+                    .aspectRatio(3f / 4f),
                 factory = { ctx ->
                     val previewView = PreviewView(ctx).apply {
                         layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
@@ -130,19 +132,16 @@ internal fun CameraScreen(
                     }
 
                     previewView
-                },
-                modifier = Modifier
-                    .padding(top = 30.dp, start = 20.dp, end = 20.dp)
-                    .aspectRatio(3f / 4f)
+                }
             )
 
-            // Capture Button and Flash Toggle
-            CaptureAndFlashButton(
+            CaptureControls(
+                modifier = modifier,
                 zoomState = zoomState,
                 flashOn = flashOn,
                 onCapture = {
                     takePhoto(context as Activity, imageCapture, flashOn) {
-                        navigateToUpload() // Navigate to upload screen
+                        navigateToUpload()
                     }
                 },
                 onToggleFlash = {
@@ -156,14 +155,15 @@ internal fun CameraScreen(
 }
 
 @Composable
-private fun CaptureAndFlashButton(
+private fun CaptureControls(
+    modifier: Modifier = Modifier,
     zoomState: Float?,
     flashOn: Boolean,
     onCapture: () -> Unit,
     onToggleFlash: () -> Unit
 ) {
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
@@ -171,6 +171,7 @@ private fun CaptureAndFlashButton(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(60.dp)
         ) {
+            // 임시 줌 비율 표시
             zoomState?.let { zoom ->
                 Text(
                     text = "${"%.1f".format(zoom)}x",
@@ -183,7 +184,7 @@ private fun CaptureAndFlashButton(
                     .size(62.dp)
             ) {
                 Icon(
-                    painter = painterResource(id = PochakIcons.CaptureButton),
+                    painter = painterResource(id = R.drawable.ic_capture_button),
                     contentDescription = "Camera Icon",
                     modifier = Modifier.size(62.dp),
                     tint = Color.Unspecified
@@ -197,7 +198,7 @@ private fun CaptureAndFlashButton(
             ) {
                 Icon(
                     painter = painterResource(
-                        id = if (flashOn) PochakIcons.FlashOn else PochakIcons.FlashOff
+                        id = if (flashOn) R.drawable.ic_flash_on else R.drawable.ic_flash_off
                     ),
                     contentDescription = "Flash Icon",
                     tint = Color.Unspecified
