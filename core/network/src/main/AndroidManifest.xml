@@ -2,4 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
 
+    <application
+        android:usesCleartextTraffic="true"> <!--HTTPS로 변경시 제거-->
+    </application>
 </manifest>

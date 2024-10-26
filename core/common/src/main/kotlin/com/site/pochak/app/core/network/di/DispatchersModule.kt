@@ -1,8 +1,8 @@
 package com.site.pochak.app.core.network.di
 
 import com.site.pochak.app.core.network.Dispatcher
-import com.site.pochak.app.core.network.NiaDispatchers.Default
-import com.site.pochak.app.core.network.NiaDispatchers.IO
+import com.site.pochak.app.core.network.PochakDispatchers.Default
+import com.site.pochak.app.core.network.PochakDispatchers.IO
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

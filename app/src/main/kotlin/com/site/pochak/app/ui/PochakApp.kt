@@ -2,6 +2,7 @@ package com.site.pochak.app.ui
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBarItem
@@ -29,17 +30,22 @@ fun PochakApp(
     modifier: Modifier = Modifier,
 ) {
     val currentDestination = appState.currentDestination
+    val shouldShowNavigationBar = appState.topLevelDestinations.any {
+        currentDestination?.hierarchy?.any { destination -> destination.hasRoute(it.route) } == true
+    }
 
     Scaffold(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier
+            .fillMaxSize()
+            // 키보드 올라올 때, 키보드 높이만큼 padding을 줌
+            .imePadding(),
         bottomBar = {
-            if (currentDestination?.hasRoute(LoginRoute::class) == false &&
-                currentDestination?.hasRoute(UploadRoute::class) == false
-            ) {
+            if (shouldShowNavigationBar) {
                 PochakNavigationBar {
                     appState.topLevelDestinations.forEach { destination ->
                         val selected =
-                            currentDestination.hierarchy.any { it.hasRoute(destination.route) }
+                            currentDestination?.hierarchy?.any { it.hasRoute(destination.route) }
+                                ?: false
 
                         NavigationBarItem(
                             selected = selected,

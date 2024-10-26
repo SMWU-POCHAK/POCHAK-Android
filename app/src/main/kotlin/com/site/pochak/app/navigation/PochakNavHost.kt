@@ -13,6 +13,8 @@ import com.site.pochak.app.feature.home.navigation.homeScreen
 import com.site.pochak.app.feature.login.navigation.LoginRoute
 import com.site.pochak.app.feature.login.navigation.loginScreen
 import com.site.pochak.app.feature.profile.navigation.profileScreen
+import com.site.pochak.app.feature.profile.setting.navigation.navigateToProfileSetting
+import com.site.pochak.app.feature.profile.setting.navigation.profileSettingScreen
 import com.site.pochak.app.navigation.TopLevelDestination.HOME
 import com.site.pochak.app.ui.PochakAppState
 
@@ -28,11 +30,14 @@ fun PochakNavHost(
         startDestination = LoginRoute,
         modifier = modifier,
     ) {
-        loginScreen(onLoginSuccess = {
+        loginScreen(
+            navigateToHome = {
             // Login 성공 시 LoginRoute를 pop하고 HomeRoute로 이동한다.
             appState.navigateToTopLevelDestination(HOME, inclusive = true)
             navController.graph.setStartDestination(HomeRoute)
-        })
+            },
+            navigateToSignUp = navController::navigateToProfileSetting,
+        )
         homeScreen()
         postScreen()
         cameraScreen(
@@ -48,5 +53,12 @@ fun PochakNavHost(
         )
         alarmScreen()
         profileScreen()
+        profileSettingScreen(
+            navigateToHome = {
+                appState.navigateToTopLevelDestination(HOME, inclusive = true)
+                navController.graph.setStartDestination(HomeRoute)
+            },
+            onBack = { navController.popBackStack() },
+        )
     }
 }
