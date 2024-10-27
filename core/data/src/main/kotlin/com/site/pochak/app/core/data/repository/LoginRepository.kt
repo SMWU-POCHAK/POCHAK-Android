@@ -1,13 +1,18 @@
 package com.site.pochak.app.core.data.repository
 
 import com.site.pochak.app.core.network.model.NetworkLoginInfo
-import com.site.pochak.app.core.network.model.NetworkResponse
+import com.site.pochak.app.core.network.utils.ApiResult
 import java.io.File
 
 interface LoginRepository {
+    /**
+     * @return: [NetworkLoginInfo]
+     */
+    suspend fun googleLogin(accessToken: String): ApiResult
 
-    suspend fun googleLogin(accessToken: String): NetworkResponse<NetworkLoginInfo>
-
+    /**
+     * @return: [NetworkLoginInfo]
+     */
     suspend fun signUp(
         profileImage: File,
         name: String,
@@ -17,10 +22,10 @@ interface LoginRepository {
         socialId: String,
         socialType: String,
         socialRefreshToken: String? = null
-    ): NetworkResponse<NetworkLoginInfo>
+    ): ApiResult
 
-    suspend fun logout(): NetworkResponse<Unit>
+    suspend fun logout(): ApiResult
 
-    suspend fun signout(): NetworkResponse<Unit>
+    suspend fun signout(): ApiResult
 
 }

@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.site.pochak.app.core.data.repository.LoginRepository
 import com.site.pochak.app.core.datastore.TokenManager
 import com.site.pochak.app.core.network.model.NetworkLoginInfo
+import com.site.pochak.app.core.network.utils.ApiResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -27,36 +28,39 @@ class LoginViewModel @Inject constructor(
     fun googleLogin(accessToken: String) {
         viewModelScope.launch {
             _loginUiState.value = LoginUiState.Loading
-            _loginUiState.value = try {
-                val response = loginRepository.googleLogin(accessToken)
+            _loginUiState.value = when (val apiResult = loginRepository.googleLogin(accessToken)) {
+                is ApiResult.Success<*> -> {
+                    val result = apiResult.result as NetworkLoginInfo
 
-                if (response.isSuccess) {
-                    val loginInfo = response.result
-
-                    if (loginInfo == null) {
-                        LoginUiState.Error("Result is null")
-                        return@launch
-                    }
-
-                    if (loginInfo.isNewMember) {
-                        LoginUiState.SignUp(loginInfo)
+                    if (result.isNewMember) {
+                        LoginUiState.SignUp(result)
                     } else {
-                        if (loginInfo.accessToken == null || loginInfo.refreshToken == null || loginInfo.handle == null) {
-                            Log.e(TAG, "Server Response Error: /google/login response is missing AccessToken, RefreshToken, Handle")
+                        if (result.accessToken == null || result.refreshToken == null || result.handle == null) {
+                            Log.e(
+                                TAG,
+                                "Server Response Error: /google/login response is missing AccessToken, RefreshToken, Handle"
+                            )
                             LoginUiState.Error("AccessToken, RefreshToken, Handle is null")
-                            return@launch
+                        } else {
+                            // TokenManager에 AccessToken, RefreshToken, Handle 저장
+                            tokenManager.saveUserData(
+                                result.accessToken!!,
+                                result.refreshToken!!,
+                                result.handle!!
+                            )
+
+                            LoginUiState.Success
                         }
-
-                        // TokenManager에 AccessToken, RefreshToken, Handle 저장
-                        tokenManager.saveUserData(loginInfo.accessToken!!, loginInfo.refreshToken!!, loginInfo.handle!!)
-
-                        LoginUiState.Success
                     }
-                } else {
-                    LoginUiState.Error(response.message)
                 }
-            } catch (e: Exception) {
-                LoginUiState.Error(e.message ?: "An error occurred")
+
+                is ApiResult.Error -> {
+                    LoginUiState.Error("${apiResult.code}: ${apiResult.message}")
+                }
+
+                else -> {
+                    LoginUiState.Error("Unknown Error")
+                }
             }
         }
     }

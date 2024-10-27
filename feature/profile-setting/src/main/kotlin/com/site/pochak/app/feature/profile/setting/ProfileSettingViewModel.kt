@@ -9,6 +9,7 @@ import com.site.pochak.app.core.data.repository.LoginRepository
 import com.site.pochak.app.core.data.repository.ProfileRepository
 import com.site.pochak.app.core.datastore.TokenManager
 import com.site.pochak.app.core.network.model.NetworkLoginInfo
+import com.site.pochak.app.core.network.utils.ApiResult
 import com.site.pochak.app.feature.profile.setting.navigation.ProfileSettingRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,7 +28,7 @@ class ProfileSettingViewModel @Inject constructor(
     private val loginRepository: LoginRepository,
     private val profileRepository: ProfileRepository,
     private val tokenManager: TokenManager
-): ViewModel() {
+) : ViewModel() {
 
     private val loginInfoKey = "loginInfo"
     private val CHECK_HANDLE_SUCCESS_CODE = "MEMBER2001"
@@ -45,67 +46,64 @@ class ProfileSettingViewModel @Inject constructor(
     fun updateProfile(profileFile: File, name: String, handle: String, message: String) {
         viewModelScope.launch {
             _profileSettingUiState.value = ProfileSettingUiState.Loading
-            _profileSettingUiState.value = try {
-                val response = loginRepository.signUp(
-                    profileImage = profileFile,
-                    name = name,
-                    email = loginInfo.email,
-                    handle = handle,
-                    message = message,
-                    socialId = loginInfo.socialId,
-                    socialType = loginInfo.socialType
-                )
+            _profileSettingUiState.value = when (val apiResult = loginRepository.signUp(
+                profileImage = profileFile,
+                name = name,
+                email = loginInfo.email,
+                handle = handle,
+                message = message,
+                socialId = loginInfo.socialId,
+                socialType = loginInfo.socialType
+            )) {
+                is ApiResult.Success<*> -> {
+                    val result = apiResult.result as NetworkLoginInfo
 
-                if (response.isSuccess) {
-                    val result = response.result
-
-                    if (result == null) {
-                        ProfileSettingUiState.Error("Result is null")
+                    if (result.accessToken == null || result.refreshToken == null || result.handle == null) {
+                        Log.e(
+                            TAG,
+                            "Server Response Error: /google/login response is missing AccessToken, RefreshToken, Handle"
+                        )
+                        ProfileSettingUiState.Error("AccessToken, RefreshToken, Handle is null")
                     } else {
-                        if (loginInfo.accessToken == null || loginInfo.refreshToken == null || loginInfo.handle == null) {
-                            Log.e(TAG, "Server Response Error: /google/login response is missing AccessToken, RefreshToken, Handle")
-                            ProfileSettingUiState.Error("AccessToken, RefreshToken, Handle is null")
-                            return@launch
-                        }
-
                         // TokenManager에 AccessToken, RefreshToken, Handle 저장
-                        tokenManager.saveUserData(loginInfo.accessToken!!, loginInfo.refreshToken!!, loginInfo.handle!!)
+                        tokenManager.saveUserData(
+                            result.accessToken!!,
+                            result.refreshToken!!,
+                            result.handle!!
+                        )
 
                         ProfileSettingUiState.Success
                     }
-
-                    ProfileSettingUiState.Success
-                } else {
-                    ProfileSettingUiState.Error(response.message)
                 }
-            } catch (e: Exception) {
-                ProfileSettingUiState.Error(e.message ?: "An error occurred")
+
+                is ApiResult.Error -> ProfileSettingUiState.Error("${apiResult.code}: ${apiResult.message}")
+
+                else -> ProfileSettingUiState.Error("Unknown Error")
             }
         }
     }
 
-    private val _checkHandleUiState = MutableStateFlow<CheckHandleUiState>(CheckHandleUiState.UnChecked)
+    private val _checkHandleUiState =
+        MutableStateFlow<CheckHandleUiState>(CheckHandleUiState.UnChecked)
     val checkHandleUiState: StateFlow<CheckHandleUiState> = _checkHandleUiState.asStateFlow()
 
     fun checkHandle(handle: String) {
         viewModelScope.launch {
             _checkHandleUiState.value = CheckHandleUiState.Loading
-            _checkHandleUiState.value = try {
-                val response = profileRepository.checkDuplicateHandle(handle)
+            _checkHandleUiState.value =
+                when (val apiResult = profileRepository.checkDuplicateHandle(handle)) {
+                    is ApiResult.SuccessNoResult -> {
+                        if (apiResult.code == CHECK_HANDLE_SUCCESS_CODE) {
+                            CheckHandleUiState.Checked
+                        } else {
+                            CheckHandleUiState.Error("중복되는 아이디입니다.")
+                        }
+                    }
 
-                if (response.isSuccess) {
-                    if (response.code == CHECK_HANDLE_SUCCESS_CODE) {
-                        CheckHandleUiState.Checked
-                    }
-                    else {
-                        CheckHandleUiState.Error("중복되는 아이디입니다.")
-                    }
-                } else {
-                    CheckHandleUiState.Error(response.message)
+                    is ApiResult.Error -> CheckHandleUiState.Error("${apiResult.code}: ${apiResult.message}")
+
+                    else -> CheckHandleUiState.Error("Unknown Error")
                 }
-            } catch (e: Exception) {
-                CheckHandleUiState.Error(e.message ?: "An error occurred")
-            }
         }
     }
 
@@ -115,15 +113,15 @@ class ProfileSettingViewModel @Inject constructor(
 }
 
 sealed class CheckHandleUiState {
-    data object UnChecked: CheckHandleUiState()
-    data object Loading: CheckHandleUiState()
-    data object Checked: CheckHandleUiState()
-    data class Error(val message: String): CheckHandleUiState()
+    data object UnChecked : CheckHandleUiState()
+    data object Loading : CheckHandleUiState()
+    data object Checked : CheckHandleUiState()
+    data class Error(val message: String) : CheckHandleUiState()
 }
 
 sealed class ProfileSettingUiState {
-    data object Idle: ProfileSettingUiState()
-    data object Loading: ProfileSettingUiState()
-    data object Success: ProfileSettingUiState()
-    data class Error(val message: String): ProfileSettingUiState()
+    data object Idle : ProfileSettingUiState()
+    data object Loading : ProfileSettingUiState()
+    data object Success : ProfileSettingUiState()
+    data class Error(val message: String) : ProfileSettingUiState()
 }

@@ -4,6 +4,9 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
 import java.io.File
 import java.io.FileOutputStream
 
@@ -26,4 +29,10 @@ fun uriToFile(uri: Uri, context: Context, quality: Int = 80): File {
     }
 
     return file
+}
+
+fun fileToMultiPartBody(file: File, name: String, mediaType: String = "image/jpeg"): MultipartBody.Part {
+    val requestBody = RequestBody.create(mediaType.toMediaTypeOrNull(), file)
+
+    return MultipartBody.Part.createFormData(name, file.name, requestBody)
 }
