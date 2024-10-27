@@ -19,17 +19,17 @@ import retrofit2.http.Query
 interface AlarmService {
 
     @GET("/api/v2/alarms")
-    fun getAllAlarms(
+    suspend fun getAllAlarms(
         @Query("page") page: Int
     ): NetworkResponse<AlarmPageResponse>
 
     @GET("/api/v2/alarms/{alarmId}")
-    fun getPreviewPost(
+    suspend fun getPreviewPost(
         @Path("alarmId") alarmId: Int
     ): NetworkResponse<NetworkPostPreview>
 
     @POST("/api/v2/alarms/{alarmId}")
-    fun checkAlarm(
+    suspend fun checkAlarm(
         @Path("alarmId") alarmId: Int
     ): NetworkResponse<Unit>
 
