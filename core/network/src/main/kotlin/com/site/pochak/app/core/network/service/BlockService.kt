@@ -24,7 +24,7 @@ interface BlockService {
     ): NetworkResponse<Unit>
 
     @GET(value = "api/v2/members/{handle}/block")
-    suspend fun getBlockedUsers(
+    suspend fun getBlockedMembers(
         @Path(value = "handle") handle: String,
         @Query(value = "page") page: Int
     ): NetworkResponse<BlockPageResponse>

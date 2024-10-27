@@ -26,13 +26,13 @@ interface CommentService {
     ): NetworkResponse<Unit>
 
     @GET(value = "api/v2/posts/{postId}/comments")
-    suspend fun getComment(
+    suspend fun getComments(
         @Path(value = "postId") postId: Int,
         @Query(value = "page") page: Int
     ): NetworkResponse<CommentPageResponse>
 
     @GET(value = "api/v2/posts/{postId}/comments/{commentId}")
-    suspend fun getChildComment(
+    suspend fun getChildComments(
         @Path(value = "postId") postId: Int,
         @Path(value = "commentId") commentId: Int,
         @Query(value = "page") page: Int

@@ -32,12 +32,12 @@ interface FollowService {
     ): NetworkResponse<MemberPageResponse>
 
     @POST(value = "api/v2/members/{handle}/follow")
-    suspend fun follow(
+    suspend fun followMember(
         @Path(value = "handle") handle: String
     ): NetworkResponse<Unit>
 
     @DELETE(value = "api/v2/members/{handle}/follower")
-    suspend fun unfollow(
+    suspend fun unfollowMember(
         @Path(value = "handle") handle: String,
         @Query(value = "followerHandle") followerHandle: String
     ): NetworkResponse<Unit>

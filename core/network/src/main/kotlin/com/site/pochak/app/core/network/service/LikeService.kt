@@ -17,7 +17,7 @@ import retrofit2.http.Query
 interface LikeService {
 
     @GET(value = "api/v2/posts/{postId}/like")
-    suspend fun getLikeMember(
+    suspend fun getLikeMembers(
         @Path(value = "postId") postId: Int,
         @Query(value = "page") page: Int
     ): NetworkResponse<List<NetworkMemberLike>>
