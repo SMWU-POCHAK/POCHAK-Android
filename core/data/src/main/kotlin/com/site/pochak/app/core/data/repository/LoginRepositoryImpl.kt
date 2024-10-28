@@ -1,20 +1,19 @@
 package com.site.pochak.app.core.data.repository
 
-import com.site.pochak.app.core.network.model.NetworkLoginInfo
-import com.site.pochak.app.core.network.model.NetworkResponse
+import com.site.pochak.app.core.data.fileToMultiPartBody
 import com.site.pochak.app.core.network.service.LoginService
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
-import okhttp3.MultipartBody
-import okhttp3.RequestBody
+import com.site.pochak.app.core.network.utils.ApiResult
+import com.site.pochak.app.core.network.utils.ApiResultHandler
 import java.io.File
 import javax.inject.Inject
 
 class LoginRepositoryImpl @Inject constructor(
     private val loginService: LoginService
 ) : LoginRepository {
-
-    override suspend fun googleLogin(accessToken: String): NetworkResponse<NetworkLoginInfo> =
-        loginService.googleLogin(accessToken)
+    override suspend fun googleLogin(accessToken: String) =
+        ApiResultHandler.handleResult {
+            loginService.googleLogin(accessToken)
+        }
 
 
     override suspend fun signUp(
@@ -26,34 +25,31 @@ class LoginRepositoryImpl @Inject constructor(
         socialId: String,
         socialType: String,
         socialRefreshToken: String?
-    ): NetworkResponse<NetworkLoginInfo> {
-        val profileImageBody = RequestBody.create(
-            "image/jpeg".toMediaTypeOrNull(),
-            profileImage
-        )
+    ): ApiResult {
+        val multipartBody = fileToMultiPartBody(profileImage, "ProfileImage")
 
-        val multiPartBody = MultipartBody.Part.createFormData(
-            "profileImage",
-            profileImage.name,
-            profileImageBody
-        )
-
-        return loginService.signUp(
-            profileImage = multiPartBody,
-            name = name,
-            email = email,
-            handle = handle,
-            message = message,
-            socialId = socialId,
-            socialType = socialType,
-            socialRefreshToken = socialRefreshToken
-        )
+        return ApiResultHandler.handleResult {
+            loginService.signUp(
+                profileImage = multipartBody,
+                name = name,
+                email = email,
+                handle = handle,
+                message = message,
+                socialId = socialId,
+                socialType = socialType,
+                socialRefreshToken = socialRefreshToken
+            )
+        }
     }
 
-    override suspend fun logout(): NetworkResponse<Unit> =
-        loginService.logout()
+    override suspend fun logout() =
+        ApiResultHandler.handleResult {
+            loginService.logout()
+        }
 
-    override suspend fun signout(): NetworkResponse<Unit> =
-        loginService.signout()
+    override suspend fun signout() =
+        ApiResultHandler.handleResult {
+            loginService.signout()
+        }
 
 }
