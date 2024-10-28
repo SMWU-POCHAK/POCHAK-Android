@@ -13,7 +13,7 @@ import retrofit2.http.Query
 interface TagService {
 
     @GET(value = "api/v2/tags/{tagId}")
-    fun approveTag(
+    suspend fun approveTag(
         @Query(value = "tagId") tagId: Int,
         @Query(value = "isAccept") isAccept: Boolean
     ): NetworkResponse<Unit>

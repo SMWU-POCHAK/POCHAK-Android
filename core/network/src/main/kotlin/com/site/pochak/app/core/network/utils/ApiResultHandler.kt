@@ -8,7 +8,7 @@ object ApiResultHandler {
         apiCall: suspend () -> NetworkResponse<T>
     ): ApiResult {
         return try {
-            val response = apiCall()
+            val response = apiCall.invoke()
 
             if (response.isSuccess) {
                 if (response.result != null) {
