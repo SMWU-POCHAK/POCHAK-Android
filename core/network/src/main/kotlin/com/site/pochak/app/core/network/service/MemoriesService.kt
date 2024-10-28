@@ -18,22 +18,22 @@ import retrofit2.http.Path
 interface MemoriesService {
 
     @GET(value = "api/v1/memories/{handle}")
-    fun getMemories(
+    suspend fun getMemories(
         @Path(value = "handle") handle: String
     ): NetworkResponse<NetworkMemory>
 
     @GET(value = "api/v1/memories/{handle}/pochaked")
-    fun getPochakedMemories(
+    suspend fun getPochakedMemories(
         @Path(value = "handle") handle: String
     ): NetworkResponse<PostPageResponse>
 
     @GET(value = "api/v1/memories/{handle}/bonded")
-    fun getBondedMemories(
+    suspend fun getBondedMemories(
         @Path(value = "handle") handle: String
     ): NetworkResponse<PostPageResponse>
 
     @GET(value = "api/v1/memories/{handle}/pochak")
-    fun getPochakMemories(
+    suspend fun getPochakMemories(
         @Path(value = "handle") handle: String
     ): NetworkResponse<PostPageResponse>
 

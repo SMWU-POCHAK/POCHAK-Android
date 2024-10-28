@@ -14,7 +14,7 @@ import retrofit2.http.Query
 interface SearchService {
 
     @GET(value = "api/v2/members/search")
-    fun searchMembers(
+    suspend fun searchMembers(
         @Query(value = "keyword") keyword: String,
         @Query(value = "page") page: Int
     ): NetworkResponse<MemberPageResponse>

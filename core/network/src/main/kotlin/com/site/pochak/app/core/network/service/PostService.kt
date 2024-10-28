@@ -24,18 +24,18 @@ import retrofit2.http.Query
 interface PostService {
 
     @GET(value = "api/v2/posts")
-    fun getHomePosts(
+    suspend fun getHomePosts(
         @Query(value = "page") page: Int
     ): NetworkResponse<PostPageResponse>
 
     @GET(value = "api/v2/posts/search")
-    fun getSearchPosts(
+    suspend fun getSearchPosts(
         @Query(value = "page") page: Int
     ): NetworkResponse<PostPageResponse>
 
     @Multipart
     @POST(value = "api/v2/posts")
-    fun postPost(
+    suspend fun postPost(
         @Part postImage: MultipartBody.Part,
 
         @Query("taggedMemberHandleList") taggedMemberHandleList: List<String>,
@@ -43,12 +43,12 @@ interface PostService {
     ): NetworkResponse<Unit>
 
     @GET(value = "api/v2/posts/{postId}")
-    fun getPostDetail(
+    suspend fun getPostDetail(
         @Query(value = "postId") postId: Int
     ): NetworkResponse<NetworkPostDetail>
 
     @DELETE(value = "api/v2/posts/{postId}")
-    fun deletePost(
+    suspend fun deletePost(
         @Query(value = "postId") postId: Int
     ): NetworkResponse<Unit>
 

@@ -16,5 +16,5 @@ import retrofit2.http.POST
 interface TokenService {
 
     @POST(value = "api/v2/refresh")
-    fun refreshToken(@HeaderMap headers: Map<String, String>): Call<NetworkResponse<NetworkToken>>
+    suspend fun refreshToken(@HeaderMap headers: Map<String, String>): Call<NetworkResponse<NetworkToken>>
 }

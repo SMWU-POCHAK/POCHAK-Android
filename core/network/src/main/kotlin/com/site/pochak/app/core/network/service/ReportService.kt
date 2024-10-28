@@ -13,7 +13,7 @@ import retrofit2.http.Query
 interface ReportService {
 
     @POST(value = "api/v2/reports")
-    fun postReport(
+    suspend fun postReport(
         @Query(value = "postId") postId: Int,
         @Query(value = "reportType") reportType: String
     ): NetworkResponse<Unit>
