@@ -3,6 +3,7 @@ package com.site.pochak.app.navigation
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
+import androidx.navigation.navOptions
 import com.site.pochak.app.feature.alarm.navigation.alarmScreen
 import com.site.pochak.app.feature.camera.navigation.cameraScreen
 import com.site.pochak.app.feature.camera.navigation.navigateToUpload
@@ -12,9 +13,12 @@ import com.site.pochak.app.feature.home.navigation.HomeRoute
 import com.site.pochak.app.feature.home.navigation.homeScreen
 import com.site.pochak.app.feature.login.navigation.LoginRoute
 import com.site.pochak.app.feature.login.navigation.loginScreen
+import com.site.pochak.app.feature.login.navigation.navigateToLogin
 import com.site.pochak.app.feature.profile.navigation.profileScreen
 import com.site.pochak.app.feature.profile.setting.navigation.navigateToProfileSetting
 import com.site.pochak.app.feature.profile.setting.navigation.profileSettingScreen
+import com.site.pochak.app.feature.splash.navigation.SplashRoute
+import com.site.pochak.app.feature.splash.navigation.splashScreen
 import com.site.pochak.app.navigation.TopLevelDestination.HOME
 import com.site.pochak.app.ui.PochakAppState
 
@@ -27,9 +31,25 @@ fun PochakNavHost(
 
     NavHost(
         navController = navController,
-        startDestination = LoginRoute,
+        startDestination = SplashRoute,
         modifier = modifier,
     ) {
+        splashScreen(
+            navigateToHome = {
+                appState.navigateToTopLevelDestination(HOME, inclusive = true)
+                navController.graph.setStartDestination(HomeRoute)
+            },
+            navigateToLogin = {
+                navController.navigateToLogin(
+                    navOptions {
+                        popUpTo(SplashRoute) {
+                            inclusive = true
+                        }
+                    }
+                )
+                navController.graph.setStartDestination(LoginRoute)
+            },
+        )
         loginScreen(
             navigateToHome = {
             // Login 성공 시 LoginRoute를 pop하고 HomeRoute로 이동한다.

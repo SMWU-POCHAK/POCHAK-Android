@@ -3,7 +3,10 @@
 
     <style name="NightAdjusted.Theme.Pochak" parent="android:Theme.Material.Light.NoActionBar" />
 
-    <style name="Theme.Pochak" parent="NightAdjusted.Theme.Pochak" />
+    <style name="Theme.Pochak" parent="NightAdjusted.Theme.Pochak" >
+        <!--기본 Splash Screen 없애기-->
+        <item name="android:windowIsTranslucent">true</item>
+    </style>
 
     <style name="NightAdjusted.Theme.Splash" parent="Theme.SplashScreen">
         <item name="android:windowLightStatusBar">true</item>
