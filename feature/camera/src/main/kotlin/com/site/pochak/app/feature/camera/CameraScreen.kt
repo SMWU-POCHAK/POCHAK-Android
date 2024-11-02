@@ -36,6 +36,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import com.site.pochak.app.core.designsystem.component.PochakTopAppBar
 import java.io.File
 import java.io.FileOutputStream
 
@@ -85,74 +86,79 @@ internal fun CameraScreen(
             permissionChecked = true
         }
     }
-
-    if (permissionChecked && permissionGranted) {
-        Column(
-            modifier = modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Top
-        ) {
-            AndroidView(
+        if (permissionChecked && permissionGranted) {
+            Column(
                 modifier = modifier
-                    .padding(top = 30.dp, start = 20.dp, end = 20.dp)
-                    .aspectRatio(3f / 4f),
-                factory = { ctx ->
-                    val previewView = PreviewView(ctx).apply {
-                        layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
-                    }
+                    .fillMaxSize()
+                    .consumeWindowInsets(WindowInsets.safeDrawing.only(WindowInsetsSides.Top)),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                PochakTopAppBar(
+                    centerContent = { Text(text = stringResource(R.string.feature_camera_title)) },
+                )
+                AndroidView(
+                    modifier = modifier
+                        .padding(start = 20.dp, end = 20.dp)
+                        .aspectRatio(3f / 4f),
+                    factory = { ctx ->
+                        val previewView = PreviewView(ctx).apply {
+                            layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
+                        }
 
-                    // ScaleGestureDetector 생성
-                    val scaleGestureDetector = ScaleGestureDetector(ctx, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
-                        override fun onScale(detector: ScaleGestureDetector): Boolean {
-                            zoomState?.let { currentZoomRatio ->
-                                val delta = detector.scaleFactor
-                                val newZoomRatio = currentZoomRatio * delta
-                                cameraControl?.setZoomRatio(newZoomRatio.coerceIn(0.5f, 6f))
-                                zoomState = newZoomRatio.coerceIn(0.5f, 6f)
+                        // ScaleGestureDetector 생성
+                        val scaleGestureDetector = ScaleGestureDetector(ctx, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
+                            override fun onScale(detector: ScaleGestureDetector): Boolean {
+                                zoomState?.let { currentZoomRatio ->
+                                    val delta = detector.scaleFactor
+                                    val newZoomRatio = currentZoomRatio * delta
+                                    cameraControl?.setZoomRatio(newZoomRatio.coerceIn(0.5f, 6f))
+                                    zoomState = newZoomRatio.coerceIn(0.5f, 6f)
+                                }
+                                return true
                             }
-                            return true
+                        })
+
+                        // 터치 이벤트 처리
+                        previewView.setOnTouchListener { view, event ->
+                            // Scale gesture 처리
+                            scaleGestureDetector.onTouchEvent(event)
+
+                            if (event.action == MotionEvent.ACTION_UP) {
+                                view.performClick()
+                            }
+
+                            true
                         }
-                    })
 
-                    // 터치 이벤트 처리
-                    previewView.setOnTouchListener { view, event ->
-                        // Scale gesture 처리
-                        scaleGestureDetector.onTouchEvent(event)
-
-                        if (event.action == MotionEvent.ACTION_UP) {
-                            view.performClick()
+                        setCamera(previewView) { cameraControlInstance, initialZoomRatio, imageCaptureInstance ->
+                            cameraControl = cameraControlInstance
+                            zoomState = initialZoomRatio
+                            imageCapture = imageCaptureInstance
                         }
 
-                        true
+                        previewView
                     }
+                )
 
-                    setCamera(previewView) { cameraControlInstance, initialZoomRatio, imageCaptureInstance ->
-                        cameraControl = cameraControlInstance
-                        zoomState = initialZoomRatio
-                        imageCapture = imageCaptureInstance
+                CaptureControls(
+                    modifier = modifier,
+                    zoomState = zoomState,
+                    flashOn = flashOn,
+                    onCapture = {
+                        takePhoto(context as Activity, imageCapture, flashOn) {
+                            navigateToUpload()
+                        }
+                    },
+                    onToggleFlash = {
+                        flashOn = !flashOn
                     }
-
-                    previewView
-                }
-            )
-
-            CaptureControls(
-                modifier = modifier,
-                zoomState = zoomState,
-                flashOn = flashOn,
-                onCapture = {
-                    takePhoto(context as Activity, imageCapture, flashOn) {
-                        navigateToUpload()
-                    }
-                },
-                onToggleFlash = {
-                    flashOn = !flashOn
-                }
-            )
+                )
+            }
+        } else if (permissionChecked && !permissionGranted) {
+            PermissionRequiredUI(modifier = modifier)
         }
-    } else if (permissionChecked && !permissionGranted) {
-        PermissionRequiredUI(modifier = modifier)
-    }
+
+
 }
 
 @Composable
