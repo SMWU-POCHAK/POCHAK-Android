@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.site.pochak.app.core.data.repository.PostRepository
 import com.site.pochak.app.core.data.repository.SearchRepository
 import com.site.pochak.app.core.datastore.TokenManager
 import com.site.pochak.app.core.network.model.MemberPageResponse
@@ -28,11 +29,15 @@ private const val TAG = "UploadViewModel"
 @HiltViewModel
 class UploadViewModel @Inject constructor(
     private val searchRepository: SearchRepository,
+    private val postRepository: PostRepository,
     private val tokenManager: TokenManager
 ) : ViewModel() {
 
     private val _searchMembersUiState = MutableStateFlow<SearchMembersUiState>(SearchMembersUiState.Empty)
     val searchMembersUiState: StateFlow<SearchMembersUiState> = _searchMembersUiState.asStateFlow()
+
+    private val _uploadUiState = MutableStateFlow<UploadUiState>(UploadUiState.Empty)
+    val uploadUiState: StateFlow<UploadUiState> = _uploadUiState.asStateFlow()
 
     fun searchMembers(keyword: String, page: Int = 0) {
         viewModelScope.launch {
@@ -59,6 +64,18 @@ class UploadViewModel @Inject constructor(
             }
         }
     }
+
+    fun postPost(postImage: File, taggedMemberHandleList:  List<String>, caption: String) {
+        viewModelScope.launch {
+            _uploadUiState.value = UploadUiState.Loading
+            val apiResult = postRepository.postPost(postImage, taggedMemberHandleList, caption)
+            _uploadUiState.value = when (apiResult) {
+                is ApiResult.Success<*> -> UploadUiState.Success(apiResult.code)
+                is ApiResult.Error -> UploadUiState.Error(apiResult.message)
+                else -> UploadUiState.Error("Unknown error")
+            }
+        }
+    }
 }
 
 sealed class SearchMembersUiState {
@@ -66,4 +83,11 @@ sealed class SearchMembersUiState {
     object Loading : SearchMembersUiState()
     data class Success(val members: List<NetworkMember>) : SearchMembersUiState()
     data class Error(val message: String) : SearchMembersUiState()
+}
+
+sealed class UploadUiState {
+    object Empty : UploadUiState()
+    object Loading : UploadUiState()
+    data class Success(val message: String) : UploadUiState()
+    data class Error(val message: String) : UploadUiState()
 }

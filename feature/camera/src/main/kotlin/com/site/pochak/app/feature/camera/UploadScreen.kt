@@ -34,6 +34,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -58,6 +59,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.google.accompanist.flowlayout.FlowRow
+import com.site.pochak.app.core.data.compressImageFile
 import com.site.pochak.app.core.data.uriToFile
 import com.site.pochak.app.core.designsystem.component.BackButton
 import com.site.pochak.app.core.designsystem.component.PochakTopAppBar
@@ -80,11 +82,13 @@ internal fun UploadRoute(
     onBackClick: () -> Unit,
 ) {
     val searchMembersUiState by viewModel.searchMembersUiState.collectAsStateWithLifecycle()
+    val uploadUiState by viewModel.uploadUiState.collectAsStateWithLifecycle()
 
     UploadScreen(
         modifier = modifier,
         viewModel = viewModel,
         searchMembersUiState = searchMembersUiState,
+        uploadUiState = uploadUiState,
         navigateToHome = navigateToHome,
         onBackClick = onBackClick,
     )
@@ -95,12 +99,16 @@ fun UploadScreen(
     modifier: Modifier = Modifier,
     viewModel: UploadViewModel,
     searchMembersUiState: SearchMembersUiState,
+    uploadUiState: UploadUiState,
     navigateToHome: () -> Unit,
     onBackClick: () -> Unit,
 ) {
     val context = LocalContext.current
     val cachedImageFile = File(context.cacheDir, "pochak_image.jpg")
     var capturedImageBitmap by rememberSaveable { mutableStateOf<Bitmap?>(null) }
+    val caption = rememberSaveable { mutableStateOf("") } // Create caption state
+    val handleSearchText = rememberSaveable { mutableStateOf("") }
+    val selectedItems = rememberSaveable { mutableStateOf(emptyList<String>()) }
 
     if (cachedImageFile.exists()) {
         capturedImageBitmap = BitmapFactory.decodeFile(cachedImageFile.absolutePath)
@@ -116,6 +124,11 @@ fun UploadScreen(
             centerContent = { Text(text = stringResource(R.string.feature_camera_upload)) },
             rightContent = {
                 IconButton(onClick = {
+                    viewModel.postPost(
+                        postImage = compressImageFile(cachedImageFile, context),
+                        taggedMemberHandleList = selectedItems.value,
+                        caption = caption.value
+                    )
                 }) {
                     Text(
                         text = stringResource(R.string.feature_camera_upload_button),
@@ -137,6 +150,7 @@ fun UploadScreen(
                     viewModel = viewModel,
                     searchMembersUiState = searchMembersUiState,
                     capturedImageBitmap = capturedImageBitmap!!,
+                    caption = caption
                 )
 
                 HorizontalDivider(
@@ -150,6 +164,8 @@ fun UploadScreen(
                     modifier = modifier,
                     viewModel = viewModel,
                     searchMembersUiState = searchMembersUiState,
+                    handleSearchText = handleSearchText,
+                    selectedItems = selectedItems
                 )
             }
         }
@@ -162,8 +178,8 @@ private fun CapturedImageAndCaptionField(
     viewModel: UploadViewModel,
     searchMembersUiState: SearchMembersUiState,
     capturedImageBitmap: Bitmap,
+    caption: MutableState<String>
 ) {
-    var caption by rememberSaveable { mutableStateOf("") }
     val maxChars = 50
 
     Row(
@@ -185,13 +201,13 @@ private fun CapturedImageAndCaptionField(
                 .padding(start = 25.dp)
         ) {
             BasicTextField(
-                value = caption,
-                onValueChange = { caption = it.take(maxChars) },
+                value = caption.value,
+                onValueChange = { caption.value = it.take(maxChars) },
                 modifier = modifier
                     .fillMaxWidth()
                     .height(128.dp),
                 decorationBox = { innerTextField ->
-                    if (caption.isEmpty()) {
+                    if (caption.value.isEmpty()) {
                         Text(
                             modifier = modifier
                                 .align(Alignment.Start),
@@ -207,7 +223,7 @@ private fun CapturedImageAndCaptionField(
             )
 
             Text(
-                text = "${caption.length}/$maxChars",
+                text = "${caption.value.length}/$maxChars",
                 modifier = modifier
                     .align(Alignment.End)
                     .padding(top = 4.dp),
@@ -224,12 +240,12 @@ private fun SearchScreen(
     modifier: Modifier = Modifier,
     viewModel: UploadViewModel,
     searchMembersUiState: SearchMembersUiState,
+    handleSearchText: MutableState<String>,
+    selectedItems: MutableState<List<String>>,
 ) {
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
-    var handleSearchText by remember { mutableStateOf("") }
     var searchResults by remember { mutableStateOf(emptyList<NetworkMember>()) }
-    var selectedItems by remember { mutableStateOf(emptyList<String>()) }
 
     Box(
         modifier = modifier
@@ -262,9 +278,9 @@ private fun SearchScreen(
             )
 
             BasicTextField(
-                value = handleSearchText,
+                value = handleSearchText.value,
                 onValueChange = {
-                    handleSearchText = it
+                    handleSearchText.value = it
                     viewModel.searchMembers(it)  // 텍스트가 변경될 때마다 API 호출
                 },
                 modifier = modifier
@@ -272,7 +288,7 @@ private fun SearchScreen(
                     .offset(x = 20.dp)
                     .focusRequester(focusRequester),
                 decorationBox = { innerTextField ->
-                    if (handleSearchText.isEmpty()) {
+                    if (handleSearchText.value.isEmpty()) {
                         Text(
                             text = stringResource(id = R.string.feature_camera_tag_friend),
                             color = Color.Gray,
@@ -303,12 +319,12 @@ private fun SearchScreen(
             mainAxisSpacing = 8.dp,
             crossAxisSpacing = 8.dp,
         ) {
-            selectedItems.forEach { item ->
+            selectedItems.value.forEach { item ->
                 SelectedItemView(
                     modifier = modifier,
                     item,
                     onDeleteClick = {
-                        selectedItems = selectedItems - it
+                        selectedItems.value -= it
                     }
                 )
             }
@@ -331,11 +347,11 @@ private fun SearchScreen(
                         SearchResultItem(
                             result = member,
                             onResultClick = {
-                                handleSearchText = ""
+                                handleSearchText.value = ""
 
                                 // 중복 체크 및 5개 제한
-                                if (member.handle !in selectedItems && selectedItems.size < 5) {
-                                    selectedItems = selectedItems + member.handle
+                                if (member.handle !in selectedItems.value && selectedItems.value.size < 5) {
+                                    selectedItems.value = selectedItems.value + member.handle
                                 }
                                 searchResults = emptyList()
                                 focusManager.clearFocus()

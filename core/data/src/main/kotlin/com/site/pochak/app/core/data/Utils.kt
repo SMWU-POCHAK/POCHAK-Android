@@ -31,6 +31,21 @@ fun uriToFile(uri: Uri, context: Context, quality: Int = 80): File {
     return file
 }
 
+fun compressImageFile(inputFile: File, context: Context, quality: Int = 50): File {
+    // Decode the bitmap from the file
+    val bitmap = BitmapFactory.decodeFile(inputFile.absolutePath)
+
+    // Create a temporary file in the cache directory
+    val compressedFile = File.createTempFile("compressed_image", ".jpeg", context.cacheDir)
+
+    // Compress and save the bitmap to the new file
+    FileOutputStream(compressedFile).use { output ->
+        bitmap.compress(Bitmap.CompressFormat.JPEG, quality, output)
+    }
+
+    return compressedFile // Return the created file
+}
+
 fun fileToMultiPartBody(file: File, name: String, mediaType: String = "image/jpeg"): MultipartBody.Part {
     val requestBody = RequestBody.create(mediaType.toMediaTypeOrNull(), file)
 
