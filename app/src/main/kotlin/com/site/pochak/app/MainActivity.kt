@@ -13,7 +13,7 @@ import dagger.hilt.android.AndroidEntryPoint
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
-        val splashScreen = installSplashScreen()
+//        val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
 
         /**
@@ -22,9 +22,9 @@ class MainActivity : ComponentActivity() {
          *
          * @return true: 화면 유지, false: 화면 제거
          */
-        splashScreen.setKeepOnScreenCondition {
-            false
-        }
+//        splashScreen.setKeepOnScreenCondition {
+//            true
+//        }
 
         enableEdgeToEdge()
 

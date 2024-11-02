@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "com.site.pochak.app.feature.login"
+    namespace = "com.site.pochak.app.feature.splash"
 }
 
 dependencies {

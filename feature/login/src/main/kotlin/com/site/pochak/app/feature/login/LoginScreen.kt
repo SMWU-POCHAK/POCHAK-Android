@@ -1,6 +1,5 @@
 package com.site.pochak.app.feature.login
 
-import android.content.Context
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -18,7 +17,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -28,16 +26,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.google.android.gms.auth.GoogleAuthUtil
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
 import com.site.pochak.app.core.network.model.NetworkLoginInfo
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 
 private const val TAG = "LoginScreen"
@@ -67,41 +60,30 @@ internal fun LoginScreen(
     navigateToHome: () -> Unit,
     navigateToSignUp: (String) -> Unit,
     loginUiState: LoginUiState,
-    onGoogleLogin: (String) -> Unit,
+    onGoogleLogin: (GoogleSignInAccount?) -> Unit,
     resetLoginUiState: () -> Unit,
 ) {
     val context = LocalContext.current
-    val coroutineScope = rememberCoroutineScope()
-    val launcher = rememberGoogleLoginLauncher(context, coroutineScope, onGoogleLogin)
+    val launcher = rememberGoogleLoginLauncher(onGoogleLogin)
     val options = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
         .requestEmail()
         .build()
     val client = GoogleSignIn.getClient(context, options)
 
-    // 구글 로그인 상태 확인(자동 로그인)
-    LaunchedEffect(Unit) {
-        val account = GoogleSignIn.getLastSignedInAccount(context)
-
-        account?.let {
-            launchAccessTokenScope(context, account, coroutineScope) { token ->
-                onGoogleLogin(token)
-            }
-        }
-    }
-
     LaunchedEffect(loginUiState) {
         Log.d(TAG, "LoginUiState: $loginUiState")
         when (loginUiState) {
             LoginUiState.Success -> navigateToHome()
-            is LoginUiState.Error -> Log.e(TAG, "Login Error: ${loginUiState.message}")
+            is LoginUiState.Error -> Log.e(TAG, "Login Error")
             is LoginUiState.SignUp -> {
+                resetLoginUiState()
+
                 navigateToSignUp(
                     Json.encodeToString(
                         NetworkLoginInfo.serializer(),
                         loginUiState.loginInfo
                     )
                 )
-                resetLoginUiState()
             }
 
             else -> Unit
@@ -117,7 +99,11 @@ internal fun LoginScreen(
             modifier = Modifier
                 .fillMaxHeight(0.4f)
                 .align(Alignment.BottomCenter),
-            onClickGoogle = { launcher.launch(client.signInIntent) }
+            onClickGoogle = {
+                client.revokeAccess().addOnCompleteListener {
+                    launcher.launch(client.signInIntent)
+                }
+            }
         )
 
         if (loginUiState is LoginUiState.Loading) {
@@ -182,43 +168,17 @@ private fun LoginButton(
 }
 
 @Composable
-private fun rememberGoogleLoginLauncher(
-    context: Context,
-    coroutineScope: CoroutineScope,
-    onGoogleLogin: (String) -> Unit,
-) = rememberLauncherForActivityResult(
-    contract = ActivityResultContracts.StartActivityForResult()
-) { result ->
-    val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
-    try {
-        val account = task.getResult(ApiException::class.java)
-
-        launchAccessTokenScope(context, account, coroutineScope) { token ->
-            onGoogleLogin(token)
+private fun rememberGoogleLoginLauncher(onGoogleLogin: (GoogleSignInAccount?) -> Unit) =
+    rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+        val account: GoogleSignInAccount? = try {
+            task.getResult(ApiException::class.java)
+        } catch (e: ApiException) {
+            Log.d(TAG, "Google sign in failed", e)
+            null
         }
-    } catch (e: ApiException) {
-        Log.d(TAG, "Google sign in failed", e)
-    }
-}
 
-private fun launchAccessTokenScope(
-    context: Context,
-    account: GoogleSignInAccount,
-    coroutineScope: CoroutineScope,
-    onSuccess: (String) -> Unit,
-) {
-    val accountName = account.email ?: return
-
-    coroutineScope.launch {
-        withContext(Dispatchers.IO) {
-            try {
-                val scope = "oauth2:https://www.googleapis.com/auth/userinfo.profile"
-                val token = GoogleAuthUtil.getToken(context, accountName, scope)
-                Log.d(TAG, "Access Token: $token")
-                onSuccess(token)
-            } catch (e: Exception) {
-                Log.e(TAG, "Access Token Error: $e")
-            }
-        }
+        onGoogleLogin(account)
     }
-}
