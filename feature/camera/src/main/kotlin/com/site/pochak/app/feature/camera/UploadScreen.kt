@@ -9,12 +9,17 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
@@ -22,8 +27,10 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -48,14 +55,21 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil.compose.AsyncImage
 import com.google.accompanist.flowlayout.FlowRow
+import com.site.pochak.app.core.data.uriToFile
+import com.site.pochak.app.core.designsystem.component.BackButton
+import com.site.pochak.app.core.designsystem.component.PochakTopAppBar
 import com.site.pochak.app.core.designsystem.icon.PochakIcons
 import com.site.pochak.app.core.designsystem.theme.Gray01
 import com.site.pochak.app.core.designsystem.theme.Gray02
 import com.site.pochak.app.core.designsystem.theme.Gray03
 import com.site.pochak.app.core.designsystem.theme.Gray0_5
 import com.site.pochak.app.core.designsystem.theme.Navy00
+import com.site.pochak.app.core.designsystem.theme.Yellow01
 import com.site.pochak.app.core.designsystem.theme.Yellow02
+import com.site.pochak.app.core.network.model.NetworkMember
 import java.io.File
 
 @Composable
@@ -65,14 +79,24 @@ internal fun UploadRoute(
     navigateToHome: () -> Unit,
     onBackClick: () -> Unit,
 ) {
+    val searchMembersUiState by viewModel.searchMembersUiState.collectAsStateWithLifecycle()
+
     UploadScreen(
         modifier = modifier,
+        viewModel = viewModel,
+        searchMembersUiState = searchMembersUiState,
+        navigateToHome = navigateToHome,
+        onBackClick = onBackClick,
     )
 }
 
 @Composable
 fun UploadScreen(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: UploadViewModel,
+    searchMembersUiState: SearchMembersUiState,
+    navigateToHome: () -> Unit,
+    onBackClick: () -> Unit,
 ) {
     val context = LocalContext.current
     val cachedImageFile = File(context.cacheDir, "pochak_image.jpg")
@@ -81,15 +105,37 @@ fun UploadScreen(
     if (cachedImageFile.exists()) {
         capturedImageBitmap = BitmapFactory.decodeFile(cachedImageFile.absolutePath)
     }
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .consumeWindowInsets(WindowInsets.safeDrawing.only(WindowInsetsSides.Top)),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        PochakTopAppBar(
+            leftContent = { BackButton(onClick = onBackClick) },
+            centerContent = { Text(text = stringResource(R.string.feature_camera_upload)) },
+            rightContent = {
+                IconButton(onClick = {
+                }) {
+                    Text(
+                        text = stringResource(R.string.feature_camera_upload_button),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = Yellow01,
+                    )
+                }
+            },
+        )
 
-    if (capturedImageBitmap != null) {
-        Column(
-            modifier = modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp)
+        if (capturedImageBitmap != null) {
+            Column(
+                modifier = modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp)
             ) {
                 CapturedImageAndCaptionField(
                     modifier = modifier,
+                    viewModel = viewModel,
+                    searchMembersUiState = searchMembersUiState,
                     capturedImageBitmap = capturedImageBitmap!!,
                 )
 
@@ -102,14 +148,19 @@ fun UploadScreen(
 
                 SearchScreen(
                     modifier = modifier,
+                    viewModel = viewModel,
+                    searchMembersUiState = searchMembersUiState,
                 )
             }
+        }
     }
 }
 
 @Composable
 private fun CapturedImageAndCaptionField(
     modifier: Modifier = Modifier,
+    viewModel: UploadViewModel,
+    searchMembersUiState: SearchMembersUiState,
     capturedImageBitmap: Bitmap,
 ) {
     var caption by rememberSaveable { mutableStateOf("") }
@@ -120,7 +171,6 @@ private fun CapturedImageAndCaptionField(
         verticalAlignment = Alignment.Top,
         modifier = modifier
             .fillMaxWidth()
-            .padding(top = 30.dp)
     ) {
         Image(
             bitmap = capturedImageBitmap.asImageBitmap(),
@@ -172,11 +222,13 @@ private fun CapturedImageAndCaptionField(
 @Composable
 private fun SearchScreen(
     modifier: Modifier = Modifier,
+    viewModel: UploadViewModel,
+    searchMembersUiState: SearchMembersUiState,
 ) {
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
     var handleSearchText by remember { mutableStateOf("") }
-    var searchResults by remember { mutableStateOf(emptyList<String>()) }
+    var searchResults by remember { mutableStateOf(emptyList<NetworkMember>()) }
     var selectedItems by remember { mutableStateOf(emptyList<String>()) }
 
     Box(
@@ -211,20 +263,14 @@ private fun SearchScreen(
 
             BasicTextField(
                 value = handleSearchText,
-                onValueChange = { handleSearchText = it },
+                onValueChange = {
+                    handleSearchText = it
+                    viewModel.searchMembers(it)  // 텍스트가 변경될 때마다 API 호출
+                },
                 modifier = modifier
                     .weight(1f)
                     .offset(x = 20.dp)
-                    .focusRequester(focusRequester)
-                    .onFocusChanged { focusState ->
-                        if (focusState.isFocused) {
-                            // 포커스되면 searchResults를 업데이트
-                            searchResults = listOf(
-                                "태그1", "태그22222222", "태그3", "태그4",
-                                "태그5", "태그6", "태그7", "태그8", "태그9"
-                            )
-                        }
-                    },
+                    .focusRequester(focusRequester),
                 decorationBox = { innerTextField ->
                     if (handleSearchText.isEmpty()) {
                         Text(
@@ -232,6 +278,16 @@ private fun SearchScreen(
                             color = Color.Gray,
                             style = MaterialTheme.typography.bodyLarge
                         )
+                        searchResults = emptyList()
+                    }
+                    else {
+                        searchResults = searchMembersUiState.let {
+                            if (it is SearchMembersUiState.Success) {
+                                it.members
+                            } else {
+                                emptyList()
+                            }
+                        }
                     }
                     innerTextField()
                 },
@@ -259,27 +315,39 @@ private fun SearchScreen(
         }
 
         // LazyColumn - 검색 결과 리스트
-        LazyColumn(
-            modifier = modifier
-                .fillMaxWidth()
-                .padding(top = 84.dp)
-                .background(Gray02, shape = RoundedCornerShape(8.dp))
-                .heightIn(max = 250.dp)
-        ) {
-            itemsIndexed(searchResults) { index, result ->
-                SearchResultItem(
-                    modifier = Modifier,
-                    result = result,
-                    onResultClick = {
-                        // 중복 체크 및 5개 제한
-                        if (result !in selectedItems && selectedItems.size < 5) {
-                            selectedItems = selectedItems + result
-                        }
-                        searchResults = emptyList()
-                        focusManager.clearFocus()
-                    },
-                    showDivider = index < searchResults.lastIndex
-                )
+        when (searchMembersUiState) {
+            is SearchMembersUiState.Loading -> {
+            }
+            is SearchMembersUiState.Success -> {
+                LazyColumn(
+                    modifier = modifier
+                        .fillMaxWidth()
+                        .padding(top = 84.dp)
+                        .background(Gray02, shape = RoundedCornerShape(8.dp))
+                        .heightIn(max = 250.dp)
+                ) {
+                    items(searchResults.size) { index ->
+                        val member = searchResults[index]
+                        SearchResultItem(
+                            result = member,
+                            onResultClick = {
+                                handleSearchText = ""
+
+                                // 중복 체크 및 5개 제한
+                                if (member.handle !in selectedItems && selectedItems.size < 5) {
+                                    selectedItems = selectedItems + member.handle
+                                }
+                                searchResults = emptyList()
+                                focusManager.clearFocus()
+                            },
+                            showDivider = index < searchResults.lastIndex
+                        )
+                    }
+                }
+            }
+            is SearchMembersUiState.Error -> {
+            }
+            else -> {
             }
         }
     }
@@ -288,7 +356,7 @@ private fun SearchScreen(
 @Composable
 fun SearchResultItem(
     modifier: Modifier = Modifier,
-    result: String,
+    result: NetworkMember,
     onResultClick: (String) -> Unit,
     showDivider: Boolean
 ) {
@@ -301,16 +369,16 @@ fun SearchResultItem(
             verticalAlignment = Alignment.CenterVertically,
             modifier = modifier
                 .fillMaxWidth()
-                .clickable { onResultClick(result) }
+                .clickable { onResultClick(result.handle) }
                 .padding(vertical = 12.dp)
         ) {
-            Image(
+            AsyncImage(
                 modifier = modifier
                     .size(40.dp)
                     .clip(CircleShape),
-                painter = painterResource(id = PochakIcons.Profile),
+                model = result.profileImage,
                 contentDescription = "profile image",
-                contentScale = ContentScale.Crop
+                contentScale = ContentScale.Crop,
             )
 
             Column(
@@ -318,12 +386,12 @@ fun SearchResultItem(
                     .padding(start = 12.dp)
             ) {
                 Text(
-                    text = result, style = MaterialTheme.typography.bodySmall, color = Color.Black
+                    text = result.handle, style = MaterialTheme.typography.bodySmall, color = Color.Black
                 )
                 Text(
                     modifier = modifier
                         .padding(top = 2.dp),
-                    text = result,
+                    text = result.name,
                     style = MaterialTheme.typography.labelMedium,
                     color = Color.Black,
                 )
