@@ -18,4 +18,5 @@ dependencies {
     implementation(libs.accompanist.flowlayout)
 
     implementation(libs.coil.kt.compose)
+    implementation(project(":core:domain"))
 }

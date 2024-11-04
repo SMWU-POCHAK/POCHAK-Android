@@ -23,17 +23,16 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -45,7 +44,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
@@ -56,11 +54,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.google.accompanist.flowlayout.FlowRow
 import com.site.pochak.app.core.data.compressImageFile
-import com.site.pochak.app.core.data.uriToFile
 import com.site.pochak.app.core.designsystem.component.BackButton
 import com.site.pochak.app.core.designsystem.component.PochakTopAppBar
 import com.site.pochak.app.core.designsystem.icon.PochakIcons
@@ -71,6 +67,8 @@ import com.site.pochak.app.core.designsystem.theme.Gray0_5
 import com.site.pochak.app.core.designsystem.theme.Navy00
 import com.site.pochak.app.core.designsystem.theme.Yellow01
 import com.site.pochak.app.core.designsystem.theme.Yellow02
+import com.site.pochak.app.core.domain.SearchMembersUiState
+import com.site.pochak.app.core.domain.UploadUiState
 import com.site.pochak.app.core.network.model.NetworkMember
 import java.io.File
 
@@ -81,8 +79,8 @@ internal fun UploadRoute(
     navigateToHome: () -> Unit,
     onBackClick: () -> Unit,
 ) {
-    val searchMembersUiState by viewModel.searchMembersUiState.collectAsStateWithLifecycle()
-    val uploadUiState by viewModel.uploadUiState.collectAsStateWithLifecycle()
+    val searchMembersUiState by viewModel.searchMembersUiState
+    val uploadUiState by viewModel.uploadUiState
 
     UploadScreen(
         modifier = modifier,
@@ -109,6 +107,12 @@ fun UploadScreen(
     val caption = rememberSaveable { mutableStateOf("") } // Create caption state
     val handleSearchText = rememberSaveable { mutableStateOf("") }
     val selectedItems = rememberSaveable { mutableStateOf(emptyList<String>()) }
+
+    LaunchedEffect(uploadUiState) {
+        if (uploadUiState is UploadUiState.Success) {
+            navigateToHome()
+        }
+    }
 
     if (cachedImageFile.exists()) {
         capturedImageBitmap = BitmapFactory.decodeFile(cachedImageFile.absolutePath)
