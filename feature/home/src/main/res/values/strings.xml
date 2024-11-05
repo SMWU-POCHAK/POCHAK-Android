@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="feature_home_title">홈</string>
+    <string name="feature_home_no_photo">아직 포착된 게시글이 없습니다</string>
 </resources>
