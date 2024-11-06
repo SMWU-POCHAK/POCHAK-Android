@@ -30,13 +30,21 @@ import androidx.lifecycle.LifecycleOwner
 import android.view.ScaleGestureDetector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import com.site.pochak.app.core.designsystem.component.PochakTopAppBar
+import com.site.pochak.app.core.designsystem.theme.Gray05
+import com.site.pochak.app.core.designsystem.theme.Gray07
+import kotlinx.coroutines.delay
 import java.io.File
 import java.io.FileOutputStream
 
@@ -96,49 +104,65 @@ internal fun CameraScreen(
                 PochakTopAppBar(
                     centerContent = { Text(text = stringResource(R.string.feature_camera_title)) },
                 )
-                AndroidView(
+                Box(
                     modifier = modifier
                         .padding(start = 20.dp, end = 20.dp)
-                        .aspectRatio(3f / 4f),
-                    factory = { ctx ->
-                        val previewView = PreviewView(ctx).apply {
-                            layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
-                        }
+                        .aspectRatio(3f / 4f)
+                ) {
+                    // 카메라 미리보기 AndroidView
+                    AndroidView(
+                        modifier = Modifier.fillMaxSize(),
+                        factory = { ctx ->
+                            val previewView = PreviewView(ctx).apply {
+                                layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
+                            }
 
-                        // ScaleGestureDetector 생성
-                        val scaleGestureDetector = ScaleGestureDetector(ctx, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
-                            override fun onScale(detector: ScaleGestureDetector): Boolean {
-                                zoomState?.let { currentZoomRatio ->
-                                    val delta = detector.scaleFactor
-                                    val newZoomRatio = currentZoomRatio * delta
-                                    cameraControl?.setZoomRatio(newZoomRatio.coerceIn(0.5f, 6f))
-                                    zoomState = newZoomRatio.coerceIn(0.5f, 6f)
+                            // ScaleGestureDetector 생성
+                            val scaleGestureDetector = ScaleGestureDetector(ctx, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
+                                override fun onScale(detector: ScaleGestureDetector): Boolean {
+                                    zoomState.let { currentZoomRatio ->
+                                        val delta = detector.scaleFactor
+                                        val newZoomRatio =
+                                            (currentZoomRatio?.times(delta))?.coerceIn(0.5f, 6f)
+                                        newZoomRatio?.let { cameraControl?.setZoomRatio(it) }
+                                        zoomState = newZoomRatio
+                                    }
+                                    return true
                                 }
-                                return true
-                            }
-                        })
+                            })
 
-                        // 터치 이벤트 처리
-                        previewView.setOnTouchListener { view, event ->
-                            // Scale gesture 처리
-                            scaleGestureDetector.onTouchEvent(event)
-
-                            if (event.action == MotionEvent.ACTION_UP) {
-                                view.performClick()
+                            // 터치 이벤트 처리
+                            previewView.setOnTouchListener { view, event ->
+                                scaleGestureDetector.onTouchEvent(event)
+                                if (event.action == MotionEvent.ACTION_UP) {
+                                    view.performClick()
+                                }
+                                true
                             }
 
-                            true
-                        }
+                            setCamera(previewView) { cameraControlInstance, initialZoomRatio, imageCaptureInstance ->
+                                cameraControl = cameraControlInstance
+                                zoomState = initialZoomRatio
+                                imageCapture = imageCaptureInstance
+                            }
 
-                        setCamera(previewView) { cameraControlInstance, initialZoomRatio, imageCaptureInstance ->
-                            cameraControl = cameraControlInstance
-                            zoomState = initialZoomRatio
-                            imageCapture = imageCaptureInstance
+                            previewView
                         }
+                    )
 
-                        previewView
+                    zoomState?.let {
+                        CameraZoomOverlay(
+                            currentZoom = it,
+                            onZoomSelected = { selectedZoom ->
+                                cameraControl?.setZoomRatio(selectedZoom)
+                                zoomState = selectedZoom
+                            },
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .padding(bottom = 8.dp)
+                        )
                     }
-                )
+                }
 
                 CaptureControls(
                     modifier = modifier,
@@ -157,9 +181,107 @@ internal fun CameraScreen(
         } else if (permissionChecked && !permissionGranted) {
             PermissionRequiredUI(modifier = modifier)
         }
-
-
 }
+
+@Composable
+fun CameraZoomOverlay(
+    modifier: Modifier = Modifier,
+    currentZoom: Float,
+    onZoomSelected: (Float) -> Unit,
+) {
+    val zoomOptions = listOf(0.5f, 1f, 2f, 3f)
+    var isZoomOptionsVisible by remember { mutableStateOf(false) }
+    var lastZoomChangeTime by remember { mutableStateOf(0L) }
+
+    val currentZoomIndex = when {
+        currentZoom < 1 -> 0
+        currentZoom < 2 -> 1
+        currentZoom < 3 -> 2
+        else -> 3
+    }
+
+    LaunchedEffect(currentZoom) {
+        isZoomOptionsVisible = true
+        lastZoomChangeTime = System.currentTimeMillis()
+        delay(3000) // 3초 대기
+        isZoomOptionsVisible = false
+    }
+
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+            .width(if (isZoomOptionsVisible) 124.dp else 28.dp) // 옵션이 보일 때와 아닐 때 너비 조정
+            .height(28.dp) // 높이를 28dp로 설정
+            .background(
+                color = Gray05.copy(0.5f),
+                shape = CircleShape
+            ),
+        horizontalArrangement = Arrangement.spacedBy(4.dp) // 아이템 간 간격을 4dp로 설정
+    ) {
+        // 왼쪽 옵션들
+        if (isZoomOptionsVisible) {
+            zoomOptions.take(currentZoomIndex).forEach { zoom ->
+                ZoomOptionItem(
+                    zoom = zoom,
+                    isSelected = false,
+                    onZoomSelected = {
+                        onZoomSelected(zoom)
+                        isZoomOptionsVisible = false
+                    }
+                )
+            }
+        }
+
+        // 현재 줌 배수
+        ZoomOptionItem(
+            zoom = currentZoom,
+            isSelected = true,
+            onClick = { isZoomOptionsVisible = !isZoomOptionsVisible }
+        )
+
+        // 오른쪽 옵션들
+        if (isZoomOptionsVisible) {
+            zoomOptions.drop(currentZoomIndex + 1).forEach { zoom ->
+                ZoomOptionItem(
+                    zoom = zoom,
+                    isSelected = false,
+                    onZoomSelected = {
+                        onZoomSelected(zoom)
+                        isZoomOptionsVisible = false
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ZoomOptionItem(
+    zoom: Float,
+    isSelected: Boolean = false,
+    onClick: () -> Unit = {},
+    onZoomSelected: ((Float) -> Unit)? = null
+) {
+    Box(
+        modifier = Modifier
+            .size(28.dp)
+            .background(
+                color = if (isSelected) Gray07.copy(alpha = 0.8f) else Color.Transparent,
+                shape = CircleShape
+            )
+            .clickable { onZoomSelected?.invoke(zoom) ?: onClick() },
+        contentAlignment = Alignment.CenterEnd
+    ) {
+        Text(
+            modifier = Modifier.padding(end = 2.dp),
+            text = "${"%.1f".format(zoom)}x",
+            color = Color.White,
+            style = MaterialTheme.typography.labelMedium
+        )
+    }
+}
+
+
 
 @Composable
 private fun CaptureControls(
@@ -170,47 +292,37 @@ private fun CaptureControls(
     onToggleFlash: () -> Unit
 ) {
     Box(
-        modifier = modifier
-            .fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(60.dp)
+        // Centered capture button
+        IconButton(
+            onClick = onCapture,
+            modifier = Modifier.size(62.dp)
         ) {
-            // 임시 줌 비율 표시
-            zoomState?.let { zoom ->
-                Text(
-                    text = "${"%.1f".format(zoom)}x",
-                )
-            }
+            Icon(
+                painter = painterResource(id = R.drawable.ic_capture_button),
+                contentDescription = "Capture Button",
+                modifier = Modifier.size(62.dp),
+                tint = Color.Unspecified
+            )
+        }
 
-            IconButton(
-                onClick = onCapture,
-                modifier = Modifier
-                    .size(62.dp)
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_capture_button),
-                    contentDescription = "Camera Icon",
-                    modifier = Modifier.size(62.dp),
-                    tint = Color.Unspecified
-                )
-            }
-
-            IconButton(
-                onClick = onToggleFlash,
-                modifier = Modifier
-                    .size(34.dp)
-            ) {
-                Icon(
-                    painter = painterResource(
-                        id = if (flashOn) R.drawable.ic_flash_on else R.drawable.ic_flash_off
-                    ),
-                    contentDescription = "Flash Icon",
-                    tint = Color.Unspecified
-                )
-            }
+        // Flash button 60dp to the right of the capture button
+        IconButton(
+            onClick = onToggleFlash,
+            modifier = Modifier
+                .size(34.dp)
+                .align(Alignment.Center)
+                .offset(x = 91.dp)
+        ) {
+            Icon(
+                painter = painterResource(
+                    id = if (flashOn) R.drawable.ic_flash_on else R.drawable.ic_flash_off
+                ),
+                contentDescription = "Flash Button",
+                tint = Color.Unspecified
+            )
         }
     }
 }

@@ -1,27 +1,17 @@
 package com.site.pochak.app.feature.camera
 
-import android.util.Log
 import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.site.pochak.app.core.data.repository.SearchRepository
-import com.site.pochak.app.core.datastore.TokenManager
-import com.site.pochak.app.core.domain.UploadUiState
 import com.site.pochak.app.core.domain.PostUseCase
 import com.site.pochak.app.core.domain.SearchMembersUiState
 import com.site.pochak.app.core.domain.SearchUseCase
-import com.site.pochak.app.core.network.model.MemberPageResponse
+import com.site.pochak.app.core.domain.UploadUiState
 import com.site.pochak.app.core.network.model.NetworkMember
-import com.site.pochak.app.core.network.utils.ApiResult
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.io.File
 import javax.inject.Inject
 
@@ -40,13 +30,52 @@ class UploadViewModel @Inject constructor(
     private val _uploadUiState = mutableStateOf<UploadUiState>(UploadUiState.Loading)
     val uploadUiState: State<UploadUiState> = _uploadUiState
 
-    // 검색 기능 호출 함수
+    // 페이징 관련 변수들
+    private var currentPage = 0  // 현재 페이지
+    private var isPaging = false // 페이징 중인지 여부
+    private val pageSize = 30    // 한 페이지당 항목 수
+
+    private val _searchResults = mutableStateOf<List<NetworkMember>>(emptyList())
+    val searchResults: State<List<NetworkMember>> = _searchResults
+
     fun searchMembers(keyword: String, page: Int = 0) {
         viewModelScope.launch {
-            // UseCase의 결과 Flow를 collect하여 상태 업데이트
+            if (isPaging) return@launch
+
+            isPaging = true
+            _searchMembersUiState.value = SearchMembersUiState.Loading
+
             searchUseCase(keyword, page).collect { state ->
-                _searchMembersUiState.value = state
+                when (state) {
+                    is SearchMembersUiState.Success -> {
+                        val updatedResults = if (page == 0) {
+                            state.members
+                        } else {
+                            _searchResults.value + state.members
+                        }
+                        _searchResults.value = updatedResults
+                    }
+                    is SearchMembersUiState.Error -> {
+                        _searchMembersUiState.value = state
+                    }
+                    else -> _searchMembersUiState.value = state
+                }
+                isPaging = false
             }
+        }
+    }
+
+
+    // 검색 결과를 지우는 함수
+    fun clearSearchResults() {
+        _searchResults.value = emptyList()
+    }
+
+    // 다음 페이지 불러오기 함수
+    fun loadNextPage(keyword: String) {
+        if (!isPaging) {
+            currentPage += 1
+            searchMembers(keyword, currentPage)
         }
     }
 

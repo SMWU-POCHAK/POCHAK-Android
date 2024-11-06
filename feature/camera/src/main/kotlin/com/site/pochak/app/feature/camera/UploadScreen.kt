@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -39,6 +40,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -249,8 +251,16 @@ private fun SearchScreen(
 ) {
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
-    var searchResults by remember { mutableStateOf(emptyList<NetworkMember>()) }
+    val searchResults by viewModel.searchResults
+    val listState = rememberLazyListState() // LazyColumn의 스크롤 상태를 저장
 
+    // 페이징 트리거: 리스트가 끝에 도달하면 다음 페이지 로드
+    LaunchedEffect(listState) {
+        snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index == listState.layoutInfo.totalItemsCount - 1 }
+            .collect { isAtEnd ->
+                if (isAtEnd) viewModel.loadNextPage(handleSearchText.value)
+            }
+    }
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -283,9 +293,13 @@ private fun SearchScreen(
 
             BasicTextField(
                 value = handleSearchText.value,
-                onValueChange = {
-                    handleSearchText.value = it
-                    viewModel.searchMembers(it)  // 텍스트가 변경될 때마다 API 호출
+                onValueChange = { newValue ->
+                    handleSearchText.value = newValue
+                    if (newValue.isEmpty()) {
+                        viewModel.clearSearchResults()  // 검색어가 비어 있으면 결과 초기화
+                    } else {
+                        viewModel.searchMembers(newValue)  // 검색어 변경 시 API 호출
+                    }
                 },
                 modifier = modifier
                     .weight(1f)
@@ -298,16 +312,6 @@ private fun SearchScreen(
                             color = Color.Gray,
                             style = MaterialTheme.typography.bodyLarge
                         )
-                        searchResults = emptyList()
-                    }
-                    else {
-                        searchResults = searchMembersUiState.let {
-                            if (it is SearchMembersUiState.Success) {
-                                it.members
-                            } else {
-                                emptyList()
-                            }
-                        }
                     }
                     innerTextField()
                 },
@@ -334,12 +338,10 @@ private fun SearchScreen(
             }
         }
 
-        // LazyColumn - 검색 결과 리스트
         when (searchMembersUiState) {
-            is SearchMembersUiState.Loading -> {
-            }
             is SearchMembersUiState.Success -> {
                 LazyColumn(
+                    state = listState,
                     modifier = modifier
                         .fillMaxWidth()
                         .padding(top = 84.dp)
@@ -353,11 +355,10 @@ private fun SearchScreen(
                             onResultClick = {
                                 handleSearchText.value = ""
 
-                                // 중복 체크 및 5개 제한
                                 if (member.handle !in selectedItems.value && selectedItems.value.size < 5) {
                                     selectedItems.value = selectedItems.value + member.handle
                                 }
-                                searchResults = emptyList()
+                                viewModel.clearSearchResults()  // 검색 결과 초기화
                                 focusManager.clearFocus()
                             },
                             showDivider = index < searchResults.lastIndex
@@ -367,8 +368,7 @@ private fun SearchScreen(
             }
             is SearchMembersUiState.Error -> {
             }
-            else -> {
-            }
+            else -> { /* Empty 상태 처리 */ }
         }
     }
 }
