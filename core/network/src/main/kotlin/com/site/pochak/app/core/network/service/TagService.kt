@@ -2,6 +2,7 @@ package com.site.pochak.app.core.network.service
 
 import com.site.pochak.app.core.network.model.NetworkResponse
 import retrofit2.http.GET
+import retrofit2.http.Path
 import retrofit2.http.Query
 
 /**
@@ -14,7 +15,7 @@ interface TagService {
 
     @GET(value = "api/v2/tags/{tagId}")
     suspend fun approveTag(
-        @Query(value = "tagId") tagId: Int,
+        @Path(value = "tagId") tagId: Int,
         @Query(value = "isAccept") isAccept: Boolean
     ): NetworkResponse<Unit>
 

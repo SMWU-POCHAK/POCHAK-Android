@@ -24,12 +24,12 @@ data class NetworkPostDetail(
     val ownerHandle: String,
     val ownerProfileImage: String,
     val tagList: List<NetworkTag>,
-    val isFollow: Boolean,
+    val isFollow: Boolean?,
     val postImage: String,
     val isLike: Boolean,
     val likeCount: Int,
     val caption: String,
-    val recentComment: NetworkComment
+    val recentComment: NetworkComment?
 )
 
 @Serializable
