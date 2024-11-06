@@ -39,7 +39,7 @@ fun RefreshableLazyVerticalGrid(
     threshold: Dp = 80.dp,
     state: LazyGridState = rememberLazyGridState(),
     columns: GridCells = GridCells.Fixed(1),
-    contentPadding: PaddingValues = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
+    contentPadding: PaddingValues = PaddingValues(horizontal = HorizontalPadding, vertical = VerticalPadding),
     verticalArrangement: Arrangement.Vertical = Arrangement.spacedBy(8.dp),
     horizontalArrangement: Arrangement.Horizontal = Arrangement.spacedBy(8.dp),
     loadMoreLimitCount: Int = 3,

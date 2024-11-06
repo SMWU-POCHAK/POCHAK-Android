@@ -1,5 +1,7 @@
 package com.site.pochak.app.navigation
 
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
@@ -33,6 +35,8 @@ fun PochakNavHost(
         navController = navController,
         startDestination = SplashRoute,
         modifier = modifier,
+        enterTransition = { EnterTransition.None },
+        exitTransition = { ExitTransition.None },
     ) {
         splashScreen(
             navigateToHome = {
