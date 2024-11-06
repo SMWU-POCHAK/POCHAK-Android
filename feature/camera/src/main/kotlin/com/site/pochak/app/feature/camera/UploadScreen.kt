@@ -55,7 +55,7 @@ import com.site.pochak.app.core.designsystem.theme.Gray02
 import com.site.pochak.app.core.designsystem.theme.Gray03
 import com.site.pochak.app.core.designsystem.theme.Gray0_5
 import com.site.pochak.app.core.designsystem.theme.Navy00
-import com.site.pochak.app.core.designsystem.theme.Yellow02
+import com.site.pochak.app.core.designsystem.theme.Yellow01
 import java.io.File
 
 @Composable
@@ -350,7 +350,7 @@ fun SelectedItemView(
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
-            .background(Yellow02, shape = RoundedCornerShape(6.dp))
+            .background(Yellow01, shape = RoundedCornerShape(6.dp))
             .wrapContentWidth()
             .padding(horizontal = 10.dp, vertical = 8.dp)
     ) {

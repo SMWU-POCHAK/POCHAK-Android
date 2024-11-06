@@ -64,7 +64,7 @@ import com.site.pochak.app.core.designsystem.component.PochakTopAppBar
 import com.site.pochak.app.core.designsystem.theme.Gray01
 import com.site.pochak.app.core.designsystem.theme.Gray03
 import com.site.pochak.app.core.designsystem.theme.Gray04
-import com.site.pochak.app.core.designsystem.theme.Yellow01
+import com.site.pochak.app.core.designsystem.theme.Yellow00
 import java.io.File
 
 private const val TAG = "ProfileSettingScreen"
@@ -242,7 +242,7 @@ private fun ProfileSettingContent(
                     Text(
                         text = stringResource(R.string.feature_profile_setting_save),
                         style = MaterialTheme.typography.titleSmall,
-                        color = if (actionEnabled) Yellow01 else Gray03,
+                        color = if (actionEnabled) Yellow00 else Gray03,
                     )
                 }
             },
