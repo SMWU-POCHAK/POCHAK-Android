@@ -166,7 +166,6 @@ internal fun CameraScreen(
 
                 CaptureControls(
                     modifier = modifier,
-                    zoomState = zoomState,
                     flashOn = flashOn,
                     onCapture = {
                         takePhoto(context as Activity, imageCapture, flashOn) {
@@ -192,6 +191,7 @@ fun CameraZoomOverlay(
     val zoomOptions = listOf(0.5f, 1f, 2f, 3f)
     var isZoomOptionsVisible by remember { mutableStateOf(false) }
     var lastZoomChangeTime by remember { mutableStateOf(0L) }
+    var initialLoadComplete by remember { mutableStateOf(false) } // Track initial load state
 
     val currentZoomIndex = when {
         currentZoom < 1 -> 0
@@ -200,23 +200,33 @@ fun CameraZoomOverlay(
         else -> 3
     }
 
+    // Start observing zoom changes only after the initial load
     LaunchedEffect(currentZoom) {
-        isZoomOptionsVisible = true
-        lastZoomChangeTime = System.currentTimeMillis()
-        delay(3000) // 3초 대기
-        isZoomOptionsVisible = false
+        if (initialLoadComplete) {
+            isZoomOptionsVisible = true
+            lastZoomChangeTime = System.currentTimeMillis()
+
+            delay(3000) // Wait for 3 seconds
+
+            // Hide options only if no new zoom change happened within 3 seconds
+            if (System.currentTimeMillis() - lastZoomChangeTime >= 3000) {
+                isZoomOptionsVisible = false
+            }
+        } else {
+            initialLoadComplete = true // Mark initial load complete
+        }
     }
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
-            .width(if (isZoomOptionsVisible) 124.dp else 28.dp) // 옵션이 보일 때와 아닐 때 너비 조정
-            .height(28.dp) // 높이를 28dp로 설정
+            .width(if (isZoomOptionsVisible) 124.dp else 28.dp)
+            .height(28.dp)
             .background(
                 color = Gray05.copy(0.5f),
                 shape = CircleShape
             ),
-        horizontalArrangement = Arrangement.spacedBy(4.dp) // 아이템 간 간격을 4dp로 설정
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         // 왼쪽 옵션들
         if (isZoomOptionsVisible) {
@@ -236,7 +246,11 @@ fun CameraZoomOverlay(
         ZoomOptionItem(
             zoom = currentZoom,
             isSelected = true,
-            onClick = { isZoomOptionsVisible = !isZoomOptionsVisible }
+            onClick = {
+                // Toggle visibility of zoom options and trigger zoom change
+                onZoomSelected(currentZoom)
+                isZoomOptionsVisible = !isZoomOptionsVisible
+            }
         )
 
         // 오른쪽 옵션들
@@ -281,12 +295,9 @@ fun ZoomOptionItem(
     }
 }
 
-
-
 @Composable
 private fun CaptureControls(
     modifier: Modifier = Modifier,
-    zoomState: Float?,
     flashOn: Boolean,
     onCapture: () -> Unit,
     onToggleFlash: () -> Unit
