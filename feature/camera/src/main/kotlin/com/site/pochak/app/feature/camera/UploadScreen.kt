@@ -63,6 +63,7 @@ import coil.compose.AsyncImage
 import com.google.accompanist.flowlayout.FlowRow
 import com.site.pochak.app.core.data.compressImageFile
 import com.site.pochak.app.core.designsystem.component.BackButton
+import com.site.pochak.app.core.designsystem.component.HorizontalPadding
 import com.site.pochak.app.core.designsystem.component.PochakAlertDialog
 import com.site.pochak.app.core.designsystem.component.PochakAlertDialogPreviewWithoutCancel
 import com.site.pochak.app.core.designsystem.component.PochakTopAppBar
@@ -161,7 +162,7 @@ fun UploadScreen(
             Column(
                 modifier = modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp)
+                    .padding(horizontal = HorizontalPadding)
             ) {
                 CapturedImageAndCaptionField(
                     modifier = modifier,
@@ -301,7 +302,7 @@ private fun SearchScreen(
                 .height(48.dp)
                 .align(Alignment.TopCenter)
                 .offset(y = 32.dp)
-                .background(Gray0_5, shape = RoundedCornerShape(8.dp))
+                .background(Gray0_5, shape = RoundedCornerShape(18.dp))
         ) {
             Icon(
                 painter = painterResource(id = PochakIcons.Search),

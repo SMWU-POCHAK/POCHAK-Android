@@ -41,6 +41,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import com.site.pochak.app.core.designsystem.component.HorizontalPadding
 import com.site.pochak.app.core.designsystem.component.PochakTopAppBar
 import com.site.pochak.app.core.designsystem.theme.Gray05
 import com.site.pochak.app.core.designsystem.theme.Gray07
@@ -106,7 +107,7 @@ internal fun CameraScreen(
                 )
                 Box(
                     modifier = modifier
-                        .padding(start = 20.dp, end = 20.dp)
+                        .padding(horizontal = HorizontalPadding)
                         .aspectRatio(3f / 4f)
                 ) {
                     // 카메라 미리보기 AndroidView
