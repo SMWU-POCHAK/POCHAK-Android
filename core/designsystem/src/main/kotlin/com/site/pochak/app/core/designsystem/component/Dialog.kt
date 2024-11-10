@@ -31,7 +31,7 @@ import com.site.pochak.app.core.designsystem.theme.Yellow01
 fun PochakAlertDialog(
     onDismiss: () -> Unit,
     titleText: String,
-    messageText: String,
+    messageText: String? = null,
     cancelButtonText: String? = null,
     confirmButtonText: String? = null,
     onCancelClick: () -> Unit = {},
@@ -56,11 +56,13 @@ fun PochakAlertDialog(
                     textAlign = TextAlign.Center,
                 )
 
-                Text(
-                    text = messageText,
-                    style = MaterialTheme.typography.bodyMedium,
-                    textAlign = TextAlign.Center,
-                )
+                messageText?.let {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.bodyMedium,
+                        textAlign = TextAlign.Center,
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.padding(16.dp))
