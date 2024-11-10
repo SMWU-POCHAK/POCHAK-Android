@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="feature_post_title">실시간 인기 게시물</string>
+    <string name="feature_post_title">게시글</string>
+    <string name="feature_post_realtime_popular">실시간 인기 포스트</string>
+    <string name="feature_post_search_placeholder">검색어를 입력해주세요.</string>
 </resources>
