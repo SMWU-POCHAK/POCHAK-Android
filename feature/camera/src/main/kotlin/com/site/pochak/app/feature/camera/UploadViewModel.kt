@@ -1,5 +1,6 @@
 package com.site.pochak.app.feature.camera
 
+import android.util.Log
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -43,28 +44,29 @@ class UploadViewModel @Inject constructor(
             if (isPaging) return@launch
 
             isPaging = true
-            _searchMembersUiState.value = SearchMembersUiState.Loading
+            _searchMembersUiState.value = SearchMembersUiState.Loading  // 로딩 상태 업데이트
 
             searchUseCase(keyword, page).collect { state ->
                 when (state) {
                     is SearchMembersUiState.Success -> {
                         val updatedResults = if (page == 0) {
+                            Log.d(TAG, "SearchMembersUiState.Success: ${state.members}")
                             state.members
                         } else {
                             _searchResults.value + state.members
                         }
                         _searchResults.value = updatedResults
+                        _searchMembersUiState.value = state  // 성공 시 상태 업데이트
                     }
                     is SearchMembersUiState.Error -> {
-                        _searchMembersUiState.value = state
+                        _searchMembersUiState.value = state  // 에러 시 상태 업데이트
                     }
                     else -> _searchMembersUiState.value = state
                 }
-                isPaging = false
+                isPaging = false  // 페이징 완료
             }
         }
     }
-
 
     // 검색 결과를 지우는 함수
     fun clearSearchResults() {

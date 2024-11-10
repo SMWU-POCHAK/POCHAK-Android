@@ -1,5 +1,6 @@
 package com.site.pochak.app.core.domain
 
+import android.util.Log
 import com.site.pochak.app.core.data.repository.SearchRepository
 import com.site.pochak.app.core.datastore.TokenManager
 import com.site.pochak.app.core.network.model.MemberPageResponse
@@ -12,6 +13,8 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
+
+private const val TAG = "SearchUseCase"
 
 class SearchUseCase @Inject constructor(
     private val searchRepository: SearchRepository,
@@ -29,6 +32,7 @@ class SearchUseCase @Inject constructor(
         val apiResult = searchRepository.searchMembers(keyword, page)
         val state = when (apiResult) {
             is ApiResult.Success<*> -> {
+                Log.d(TAG, "Success: ${apiResult.result}")
                 val result = apiResult.result as MemberPageResponse
                 val filteredMembers = result.memberList.filter { it.handle != userHandle }
                 SearchMembersUiState.Success(filteredMembers)

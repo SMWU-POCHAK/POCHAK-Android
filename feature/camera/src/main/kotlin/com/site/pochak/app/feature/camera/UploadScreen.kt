@@ -2,6 +2,8 @@ package com.site.pochak.app.feature.camera
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.util.Log
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -27,6 +29,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -60,6 +63,8 @@ import coil.compose.AsyncImage
 import com.google.accompanist.flowlayout.FlowRow
 import com.site.pochak.app.core.data.compressImageFile
 import com.site.pochak.app.core.designsystem.component.BackButton
+import com.site.pochak.app.core.designsystem.component.PochakAlertDialog
+import com.site.pochak.app.core.designsystem.component.PochakAlertDialogPreviewWithoutCancel
 import com.site.pochak.app.core.designsystem.component.PochakTopAppBar
 import com.site.pochak.app.core.designsystem.icon.PochakIcons
 import com.site.pochak.app.core.designsystem.theme.Gray01
@@ -73,6 +78,8 @@ import com.site.pochak.app.core.domain.SearchMembersUiState
 import com.site.pochak.app.core.domain.UploadUiState
 import com.site.pochak.app.core.network.model.NetworkMember
 import java.io.File
+
+private const val TAG = "UploadScreen"
 
 @Composable
 internal fun UploadRoute(
@@ -109,11 +116,16 @@ fun UploadScreen(
     val caption = rememberSaveable { mutableStateOf("") } // Create caption state
     val handleSearchText = rememberSaveable { mutableStateOf("") }
     val selectedItems = rememberSaveable { mutableStateOf(emptyList<String>()) }
+    var backPressed by remember { mutableStateOf(false) }
 
     LaunchedEffect(uploadUiState) {
         if (uploadUiState is UploadUiState.Success) {
             navigateToHome()
         }
+    }
+
+    BackHandler {
+        backPressed = true
     }
 
     if (cachedImageFile.exists()) {
@@ -126,7 +138,7 @@ fun UploadScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         PochakTopAppBar(
-            leftContent = { BackButton(onClick = onBackClick) },
+            leftContent = { BackButton(onClick = { backPressed = true }) },
             centerContent = { Text(text = stringResource(R.string.feature_camera_upload)) },
             rightContent = {
                 IconButton(onClick = {
@@ -138,7 +150,7 @@ fun UploadScreen(
                 }) {
                     Text(
                         text = stringResource(R.string.feature_camera_upload_button),
-                        style = MaterialTheme.typography.titleSmall,
+                        style = MaterialTheme.typography.bodySmall, // 추후 변경
                         color = Yellow01,
                     )
                 }
@@ -174,6 +186,20 @@ fun UploadScreen(
                     selectedItems = selectedItems
                 )
             }
+        }
+        if(backPressed) {
+            PochakAlertDialog(
+                onDismiss = { backPressed = false },
+                titleText = stringResource(R.string.feature_camera_back_title),
+                messageText = stringResource(R.string.feature_camera_back_message),
+                cancelButtonText = stringResource(R.string.feature_camera_back_cancel),
+                confirmButtonText = stringResource(R.string.feature_camera_back_confirm),
+                onConfirmClick = { backPressed = false },
+                onCancelClick = {
+                    backPressed = false
+                    onBackClick()
+                },
+            )
         }
     }
 }
@@ -253,14 +279,8 @@ private fun SearchScreen(
     val focusManager = LocalFocusManager.current
     val searchResults by viewModel.searchResults
     val listState = rememberLazyListState() // LazyColumn의 스크롤 상태를 저장
+    var showTagDialog by remember { mutableStateOf(false) }  // State to control dialog visibility
 
-    // 페이징 트리거: 리스트가 끝에 도달하면 다음 페이지 로드
-    LaunchedEffect(listState) {
-        snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index == listState.layoutInfo.totalItemsCount - 1 }
-            .collect { isAtEnd ->
-                if (isAtEnd) viewModel.loadNextPage(handleSearchText.value)
-            }
-    }
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -350,13 +370,17 @@ private fun SearchScreen(
                 ) {
                     items(searchResults.size) { index ->
                         val member = searchResults[index]
+                        Log.d(TAG, "member: $member")
                         SearchResultItem(
                             result = member,
                             onResultClick = {
                                 handleSearchText.value = ""
 
                                 if (member.handle !in selectedItems.value && selectedItems.value.size < 5) {
-                                    selectedItems.value = selectedItems.value + member.handle
+                                    selectedItems.value += member.handle
+                                }
+                                else if (selectedItems.value.size >= 5) {
+                                    showTagDialog = true
                                 }
                                 viewModel.clearSearchResults()  // 검색 결과 초기화
                                 focusManager.clearFocus()
@@ -365,11 +389,30 @@ private fun SearchScreen(
                         )
                     }
                 }
+
+                if (showTagDialog) {
+                    PochakAlertDialog(
+                        onDismiss = { showTagDialog = false },
+                        titleText = stringResource(R.string.feature_camera_tag_dialog_title),
+                        confirmButtonText = stringResource(R.string.feature_camera_tag_dialog_confirm),
+                        onConfirmClick = { showTagDialog = false },
+                    )
+                }
             }
+
+            is SearchMembersUiState.Loading -> {
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center)
+                )
+            }
+
             is SearchMembersUiState.Error -> {
             }
-            else -> { /* Empty 상태 처리 */ }
+
+            else -> {
+            }
         }
+
     }
 }
 
