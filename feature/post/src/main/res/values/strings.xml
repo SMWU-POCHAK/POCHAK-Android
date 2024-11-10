@@ -1,4 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="feature_post_title">게시글</string>
+    <string name="feature_post_title">실시간 인기 게시물</string>
 </resources>

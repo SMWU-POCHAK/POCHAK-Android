@@ -13,7 +13,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navOptions
 import com.site.pochak.app.feature.alarm.navigation.navigateToAlarm
 import com.site.pochak.app.feature.camera.navigation.navigateToCamera
-import com.site.pochak.app.feature.camera.navigation.navigateToPost
+import com.site.pochak.app.feature.post.navigation.navigateToPost
 import com.site.pochak.app.feature.home.navigation.navigateToHome
 import com.site.pochak.app.feature.profile.navigation.navigateToProfile
 import com.site.pochak.app.navigation.TopLevelDestination

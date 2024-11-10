@@ -1,10 +1,10 @@
-package com.site.pochak.app.feature.camera.navigation
+package com.site.pochak.app.feature.post.navigation
 
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavOptions
 import androidx.navigation.compose.composable
-import com.site.pochak.app.feature.camera.PostRoute
+import com.site.pochak.app.feature.post.PostRoute
 import kotlinx.serialization.Serializable
 
 @Serializable data object PostRoute
