@@ -78,6 +78,16 @@ internal fun CameraScreen(
     var imageCapture by remember { mutableStateOf<ImageCapture?>(null) }
     var flashOn by remember { mutableStateOf<Boolean>(false) }
 
+    // Cleanup logic when the CameraScreen is disposed
+    DisposableEffect(Unit) {
+        onDispose {
+            cameraControl?.cancelFocusAndMetering() // 카메라 동작 중지
+            cameraControl = null
+            zoomState = null
+            flashOn = false
+        }
+    }
+
     LaunchedEffect(Unit) {
         if (!permissionChecked) {
             permissionGranted = ContextCompat.checkSelfPermission(
@@ -93,6 +103,9 @@ internal fun CameraScreen(
                 )
             }
             permissionChecked = true
+        }
+        if (permissionGranted) {
+            zoomState = 1f // 기본 줌 배율로 초기화
         }
     }
         if (permissionChecked && permissionGranted) {
@@ -143,7 +156,7 @@ internal fun CameraScreen(
 
                             setCamera(previewView) { cameraControlInstance, initialZoomRatio, imageCaptureInstance ->
                                 cameraControl = cameraControlInstance
-                                zoomState = initialZoomRatio
+                                zoomState = 1f
                                 imageCapture = imageCaptureInstance
                             }
 
@@ -152,6 +165,7 @@ internal fun CameraScreen(
                     )
 
                     zoomState?.let {
+                        Log.d(TAG, "Zoom ratio: $it")
                         CameraZoomOverlay(
                             currentZoom = it,
                             onZoomSelected = { selectedZoom ->
