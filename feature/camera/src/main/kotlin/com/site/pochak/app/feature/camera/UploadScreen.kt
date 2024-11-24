@@ -43,7 +43,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -65,7 +64,6 @@ import com.site.pochak.app.core.data.compressImageFile
 import com.site.pochak.app.core.designsystem.component.BackButton
 import com.site.pochak.app.core.designsystem.component.HorizontalPadding
 import com.site.pochak.app.core.designsystem.component.PochakAlertDialog
-import com.site.pochak.app.core.designsystem.component.PochakAlertDialogPreviewWithoutCancel
 import com.site.pochak.app.core.designsystem.component.PochakTopAppBar
 import com.site.pochak.app.core.designsystem.icon.PochakIcons
 import com.site.pochak.app.core.designsystem.theme.Gray01
@@ -114,7 +112,7 @@ fun UploadScreen(
     val context = LocalContext.current
     val cachedImageFile = File(context.cacheDir, "pochak_image.jpg")
     var capturedImageBitmap by rememberSaveable { mutableStateOf<Bitmap?>(null) }
-    val caption = rememberSaveable { mutableStateOf("") } // Create caption state
+    val caption = rememberSaveable { mutableStateOf("") }
     val handleSearchText = rememberSaveable { mutableStateOf("") }
     val selectedItems = rememberSaveable { mutableStateOf(emptyList<String>()) }
     var backPressed by remember { mutableStateOf(false) }
@@ -132,75 +130,93 @@ fun UploadScreen(
     if (cachedImageFile.exists()) {
         capturedImageBitmap = BitmapFactory.decodeFile(cachedImageFile.absolutePath)
     }
-    Column(
+
+    Box(
         modifier = modifier
             .fillMaxSize()
-            .consumeWindowInsets(WindowInsets.safeDrawing.only(WindowInsetsSides.Top)),
-        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        PochakTopAppBar(
-            leftContent = { BackButton(onClick = { backPressed = true }) },
-            centerContent = { Text(text = stringResource(R.string.feature_camera_upload)) },
-            rightContent = {
-                IconButton(onClick = {
-                    viewModel.postPost(
-                        postImage = compressImageFile(cachedImageFile, context),
-                        taggedMemberHandleList = selectedItems.value,
-                        caption = caption.value
-                    )
-                }) {
-                    Text(
-                        text = stringResource(R.string.feature_camera_upload_button),
-                        style = MaterialTheme.typography.bodySmall, // 추후 변경
-                        color = Yellow01,
-                    )
-                }
-            },
-        )
+        Column(
+            modifier = modifier
+                .fillMaxSize()
+                .consumeWindowInsets(WindowInsets.safeDrawing.only(WindowInsetsSides.Top)),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            PochakTopAppBar(
+                leftContent = { BackButton(onClick = { backPressed = true }) },
+                centerContent = { Text(text = stringResource(R.string.feature_camera_upload)) },
+                rightContent = {
+                    IconButton(onClick = {
+                        viewModel.postPost(
+                            postImage = compressImageFile(cachedImageFile, context),
+                            taggedMemberHandleList = selectedItems.value,
+                            caption = caption.value
+                        )
+                    }) {
+                        Text(
+                            text = stringResource(R.string.feature_camera_upload_button),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Yellow01,
+                        )
+                    }
+                },
+            )
 
-        if (capturedImageBitmap != null) {
-            Column(
-                modifier = modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = HorizontalPadding)
-            ) {
-                CapturedImageAndCaptionField(
-                    modifier = modifier,
-                    viewModel = viewModel,
-                    searchMembersUiState = searchMembersUiState,
-                    capturedImageBitmap = capturedImageBitmap!!,
-                    caption = caption
-                )
-
-                HorizontalDivider(
+            if (capturedImageBitmap != null) {
+                Column(
                     modifier = modifier
                         .fillMaxWidth()
-                        .padding(vertical = 20.dp),
-                    color = Gray01
-                )
+                        .padding(horizontal = HorizontalPadding)
+                ) {
+                    CapturedImageAndCaptionField(
+                        modifier = modifier,
+                        capturedImageBitmap = capturedImageBitmap!!,
+                        caption = caption
+                    )
 
-                SearchScreen(
-                    modifier = modifier,
-                    viewModel = viewModel,
-                    searchMembersUiState = searchMembersUiState,
-                    handleSearchText = handleSearchText,
-                    selectedItems = selectedItems
+                    HorizontalDivider(
+                        modifier = modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 20.dp),
+                        color = Gray01
+                    )
+
+                    SearchScreen(
+                        modifier = modifier,
+                        viewModel = viewModel,
+                        searchMembersUiState = searchMembersUiState,
+                        handleSearchText = handleSearchText,
+                        selectedItems = selectedItems
+                    )
+                }
+            }
+            if (backPressed) {
+                PochakAlertDialog(
+                    onDismiss = { backPressed = false },
+                    titleText = stringResource(R.string.feature_camera_back_title),
+                    messageText = stringResource(R.string.feature_camera_back_message),
+                    cancelButtonText = stringResource(R.string.feature_camera_back_cancel),
+                    confirmButtonText = stringResource(R.string.feature_camera_back_confirm),
+                    onConfirmClick = { backPressed = false },
+                    onCancelClick = {
+                        backPressed = false
+                        onBackClick()
+                    },
                 )
             }
         }
-        if(backPressed) {
-            PochakAlertDialog(
-                onDismiss = { backPressed = false },
-                titleText = stringResource(R.string.feature_camera_back_title),
-                messageText = stringResource(R.string.feature_camera_back_message),
-                cancelButtonText = stringResource(R.string.feature_camera_back_cancel),
-                confirmButtonText = stringResource(R.string.feature_camera_back_confirm),
-                onConfirmClick = { backPressed = false },
-                onCancelClick = {
-                    backPressed = false
-                    onBackClick()
-                },
-            )
+
+        // 업로드 중일 때 로딩 표시
+        if (uploadUiState is UploadUiState.Loading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.2f)),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
         }
     }
 }
@@ -208,8 +224,6 @@ fun UploadScreen(
 @Composable
 private fun CapturedImageAndCaptionField(
     modifier: Modifier = Modifier,
-    viewModel: UploadViewModel,
-    searchMembersUiState: SearchMembersUiState,
     capturedImageBitmap: Bitmap,
     caption: MutableState<String>
 ) {

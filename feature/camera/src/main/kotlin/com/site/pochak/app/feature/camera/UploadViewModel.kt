@@ -28,7 +28,7 @@ class UploadViewModel @Inject constructor(
     val searchMembersUiState: State<SearchMembersUiState> = _searchMembersUiState
 
     // 게시물 생성 상태를 담는 상태 변수
-    private val _uploadUiState = mutableStateOf<UploadUiState>(UploadUiState.Loading)
+    private val _uploadUiState = mutableStateOf<UploadUiState>(UploadUiState.Idle)
     val uploadUiState: State<UploadUiState> = _uploadUiState
 
     // 페이징 관련 변수들

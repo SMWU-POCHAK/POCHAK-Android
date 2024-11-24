@@ -39,6 +39,7 @@ class PostUseCase @Inject constructor(
 
 // 게시물 생성 상태를 나타내는 sealed interface
 sealed interface UploadUiState {
+    data object Idle : UploadUiState
     data object Loading : UploadUiState
     data object Success : UploadUiState
     data class Failed(val error: String) : UploadUiState
