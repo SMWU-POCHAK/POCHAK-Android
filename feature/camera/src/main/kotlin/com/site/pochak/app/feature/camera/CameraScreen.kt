@@ -30,7 +30,6 @@ import androidx.lifecycle.LifecycleOwner
 import android.view.ScaleGestureDetector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.CircleShape
@@ -77,14 +76,27 @@ internal fun CameraScreen(
     var zoomState by remember { mutableStateOf<Float?>(null) }
     var imageCapture by remember { mutableStateOf<ImageCapture?>(null) }
     var flashOn by remember { mutableStateOf<Boolean>(false) }
+    var selectedZoom by remember { mutableStateOf<Float?>(null) }
+    var isAnimating by remember { mutableStateOf(false) }
 
-    // Cleanup logic when the CameraScreen is disposed
     DisposableEffect(Unit) {
         onDispose {
             cameraControl?.cancelFocusAndMetering() // 카메라 동작 중지
             cameraControl = null
             zoomState = null
             flashOn = false
+        }
+    }
+
+    // Zoom 애니메이션 처리
+    LaunchedEffect(selectedZoom) {
+        selectedZoom?.let { targetZoom ->
+            zoomState?.let { currentZoom ->
+                animateZoom(cameraControl, currentZoom, targetZoom) { updatedZoom ->
+                    zoomState = updatedZoom
+                }
+                isAnimating = false // 애니메이션 종료
+            }
         }
     }
 
@@ -165,16 +177,20 @@ internal fun CameraScreen(
                     )
 
                     zoomState?.let {
-                        Log.d(TAG, "Zoom ratio: $it")
+                        Log.d(TAG, "Current Zoom ratio: $it")
                         CameraZoomOverlay(
                             currentZoom = it,
-                            onZoomSelected = { selectedZoom ->
-                                cameraControl?.setZoomRatio(selectedZoom)
-                                zoomState = selectedZoom
+                            onZoomSelected = { selectedZoomRatio ->
+                                Log.d(TAG, "Selected Zoom ratio: $selectedZoomRatio")
+                                selectedZoom = selectedZoomRatio // 선택된 줌 배율 업데이트
+                            },
+                            onZoomStart = {
+                                isAnimating = true // 애니메이션 시작
                             },
                             modifier = Modifier
                                 .align(Alignment.BottomCenter)
-                                .padding(bottom = 8.dp)
+                                .padding(bottom = 8.dp),
+                            isAnimating = isAnimating
                         )
                     }
                 }
@@ -202,11 +218,14 @@ fun CameraZoomOverlay(
     modifier: Modifier = Modifier,
     currentZoom: Float,
     onZoomSelected: (Float) -> Unit,
+    onZoomStart: () -> Unit, // 애니메이션 시작 콜백
+    isAnimating: Boolean
 ) {
     val zoomOptions = listOf(0.5f, 1f, 2f, 3f)
     var isZoomOptionsVisible by remember { mutableStateOf(false) }
     var lastZoomChangeTime by remember { mutableStateOf(0L) }
-    var initialLoadComplete by remember { mutableStateOf(false) } // Track initial load state
+    var initialLoadComplete by remember { mutableStateOf(false) }
+    var displayZoom by remember { mutableStateOf(currentZoom) } // 애니메이션 상태에 따라 텍스트 고정
 
     val currentZoomIndex = when {
         currentZoom < 1 -> 0
@@ -215,20 +234,27 @@ fun CameraZoomOverlay(
         else -> 3
     }
 
-    // Start observing zoom changes only after the initial load
+    // 애니메이션 상태에 따라 표시 값 고정
+    LaunchedEffect(isAnimating, currentZoom) {
+        if (!isAnimating) {
+            displayZoom = currentZoom // 애니메이션 종료 후 최종 값 반영
+        }
+    }
+
+    // 자동 숨김 로직
     LaunchedEffect(currentZoom) {
         if (initialLoadComplete) {
             isZoomOptionsVisible = true
             lastZoomChangeTime = System.currentTimeMillis()
 
-            delay(3000) // Wait for 3 seconds
+            delay(3000) // 3초 대기
 
-            // Hide options only if no new zoom change happened within 3 seconds
+            // 3초 동안 추가 변경이 없으면 리스트 숨김
             if (System.currentTimeMillis() - lastZoomChangeTime >= 3000) {
                 isZoomOptionsVisible = false
             }
         } else {
-            initialLoadComplete = true // Mark initial load complete
+            initialLoadComplete = true // 초기 로드 완료
         }
     }
 
@@ -250,21 +276,22 @@ fun CameraZoomOverlay(
                     zoom = zoom,
                     isSelected = false,
                     onZoomSelected = {
-                        onZoomSelected(zoom)
-                        isZoomOptionsVisible = false
+                        if (!isAnimating) {
+                            onZoomStart() // 애니메이션 시작 알림
+                            onZoomSelected(zoom)
+                            lastZoomChangeTime = System.currentTimeMillis() // 시간 업데이트
+                        }
                     }
                 )
             }
         }
 
-        // 현재 줌 배수
+        // 현재 줌 배율 표시
         ZoomOptionItem(
-            zoom = currentZoom,
+            zoom = displayZoom,
             isSelected = true,
             onClick = {
-                // Toggle visibility of zoom options and trigger zoom change
-                onZoomSelected(currentZoom)
-                isZoomOptionsVisible = !isZoomOptionsVisible
+                isZoomOptionsVisible = true
             }
         )
 
@@ -275,8 +302,11 @@ fun CameraZoomOverlay(
                     zoom = zoom,
                     isSelected = false,
                     onZoomSelected = {
-                        onZoomSelected(zoom)
-                        isZoomOptionsVisible = false
+                        if (!isAnimating) {
+                            onZoomStart() // 애니메이션 시작 알림
+                            onZoomSelected(zoom)
+                            lastZoomChangeTime = System.currentTimeMillis() // 시간 업데이트
+                        }
                     }
                 )
             }
@@ -469,7 +499,7 @@ private fun takePhoto(
  * @param file 회전된 비트맵을 가져올 파일, 절대 경로를 사용하여 이미지 파일을 가져옴
  * @return 회전된 비트맵
  */
-fun getRotatedBitmap(file: File): Bitmap {
+private fun getRotatedBitmap(file: File): Bitmap {
     val bitmap = BitmapFactory.decodeFile(file.absolutePath)
 
     // Exif 정보 가져오기
@@ -501,4 +531,42 @@ private fun saveBitmapToFile(bitmap: Bitmap, file: File) {
     FileOutputStream(file).use { out ->
         bitmap.compress(Bitmap.CompressFormat.JPEG, 100, out)
     }
+}
+
+/**
+ * 카메라 줌 비율을 시작 값에서 목표 값으로 애니메이션 효과를 통해 변경
+ *
+ * 이 함수는 줌 비율을 부드럽게 이동
+ * 각 단계에서 카메라 줌 비율을 업데이트하고 제공된 콜백을 호출하여 현재 값 전달
+ * 고정된 단계 수와 지속 시간을 사용하여 코루틴 컨텍스트에서 애니메이션 수행
+ *
+ * @param cameraControl 카메라의 줌 비율을 업데이트할 CameraControl 인스턴스.
+ * @param startZoom 애니메이션 시작 시의 초기 줌 비율.
+ * @param targetZoom 애니메이션 종료 시 목표로 하는 줌 비율.
+ * @param onZoomUpdated 각 애니메이션 단계에서 업데이트된 줌 비율을 전달하는 콜백.
+ *
+ * @throws IllegalArgumentException `steps`나 `duration` 값이 0이거나 음수일 경우 발생.
+ *
+ */
+suspend fun animateZoom(
+    cameraControl: CameraControl?,
+    startZoom: Float,
+    targetZoom: Float,
+    onZoomUpdated: (Float) -> Unit
+) {
+    val steps = 20 // 애니메이션 단계 수
+    val duration = 150L // 애니메이션 전체 시간 (밀리초)
+    val stepDuration = duration / steps
+    val zoomDelta = (targetZoom - startZoom) / steps
+
+    var currentZoom = startZoom
+    repeat(steps) {
+        currentZoom += zoomDelta
+        cameraControl?.setZoomRatio(currentZoom)
+        onZoomUpdated(currentZoom) // 상태 업데이트 콜백
+        delay(stepDuration)
+    }
+    // 최종 줌 배율 설정
+    cameraControl?.setZoomRatio(targetZoom)
+    onZoomUpdated(targetZoom)
 }
