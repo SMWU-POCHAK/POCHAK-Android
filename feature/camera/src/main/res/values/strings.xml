@@ -6,6 +6,7 @@
     <string name="feature_camera_input_caption">내용 입력하기</string>
     <string name="feature_camera_tag">태그하기</string>
     <string name="feature_camera_tag_friend">태그할 친구를 입력하세요.</string>
+    <string name="feature_camera_tag_cancel">취소</string>
     <string name="feature_camera_permission_camera">카메라 권한이 필요합니다.\n설정에서 권한을 허용해주세요.</string>
     <string name="feature_camera_back_title">입력을 취소하고\n페이지를 나갈까요?</string>
     <string name="feature_camera_back_message">페이지를 벗어나면 현재 입력된 내용은\n저장되지 않으며, 모두 사라집니다.</string>

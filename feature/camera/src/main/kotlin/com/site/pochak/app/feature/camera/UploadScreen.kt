@@ -2,15 +2,16 @@ package com.site.pochak.app.feature.camera
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.consumeWindowInsets
@@ -18,11 +19,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -46,8 +47,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
@@ -304,6 +307,8 @@ private fun SearchScreen(
 ) {
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
+    var isFocused by remember { mutableStateOf(false) } // 포커스 여부
+    val isSearching = handleSearchText.value.isNotEmpty() || isFocused // 포커스 여부와 입력 상태 확인
     val searchResults by viewModel.searchResults
     val listState = rememberLazyListState() // LazyColumn의 스크롤 상태를 저장
     var showTagDialog by remember { mutableStateOf(false) }  // State to control dialog visibility
@@ -319,52 +324,6 @@ private fun SearchScreen(
             style = MaterialTheme.typography.titleSmall,
             textAlign = TextAlign.Start
         )
-
-        // 검색 Row
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = modifier
-                .fillMaxWidth()
-                .height(48.dp)
-                .align(Alignment.TopCenter)
-                .offset(y = 32.dp)
-                .background(Gray0_5, shape = RoundedCornerShape(18.dp))
-        ) {
-            Icon(
-                painter = painterResource(id = PochakIcons.Search),
-                contentDescription = "Search Icon",
-                modifier = modifier
-                    .size(24.dp)
-                    .offset(x = 12.dp)
-            )
-
-            BasicTextField(
-                value = handleSearchText.value,
-                onValueChange = { newValue ->
-                    handleSearchText.value = newValue
-                    if (newValue.isEmpty()) {
-                        viewModel.clearSearchResults()  // 검색어가 비어 있으면 결과 초기화
-                    } else {
-                        viewModel.searchMembers(newValue)  // 검색어 변경 시 API 호출
-                    }
-                },
-                modifier = modifier
-                    .weight(1f)
-                    .offset(x = 20.dp)
-                    .focusRequester(focusRequester),
-                decorationBox = { innerTextField ->
-                    if (handleSearchText.value.isEmpty()) {
-                        Text(
-                            text = stringResource(id = R.string.feature_camera_tag_friend),
-                            color = Color.Gray,
-                            style = MaterialTheme.typography.bodyLarge
-                        )
-                    }
-                    innerTextField()
-                },
-                textStyle = MaterialTheme.typography.bodyLarge
-            )
-        }
 
         // FlowRow - 선택된 아이템들
         FlowRow(
@@ -385,61 +344,148 @@ private fun SearchScreen(
             }
         }
 
-        when (searchMembersUiState) {
-            is SearchMembersUiState.Success -> {
-                LazyColumn(
-                    state = listState,
-                    modifier = modifier
+        Row(
+            verticalAlignment = Alignment.Top, // 취소 버튼을 Row의 위쪽에 정렬
+            modifier = Modifier
+                .padding(top = 32.dp)
+                .fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 84.dp)
-                        .background(Gray02, shape = RoundedCornerShape(8.dp))
-                        .heightIn(max = 250.dp)
+                        .height(48.dp)
+                        .background(Gray0_5, shape = RoundedCornerShape(18.dp))
                 ) {
-                    items(searchResults.size) { index ->
-                        val member = searchResults[index]
-                        Log.d(TAG, "member: $member")
-                        SearchResultItem(
-                            result = member,
-                            onResultClick = {
-                                handleSearchText.value = ""
+                    Icon(
+                        painter = painterResource(id = PochakIcons.Search),
+                        contentDescription = "Search Icon",
+                        modifier = Modifier
+                            .padding(start = 12.dp)
+                            .size(24.dp)
+                    )
 
-                                if (member.handle !in selectedItems.value && selectedItems.value.size < 5) {
-                                    selectedItems.value += member.handle
-                                }
-                                else if (selectedItems.value.size >= 5) {
-                                    showTagDialog = true
-                                }
-                                viewModel.clearSearchResults()  // 검색 결과 초기화
-                                focusManager.clearFocus()
+                    BasicTextField(
+                        value = handleSearchText.value,
+                        onValueChange = { newValue ->
+                            handleSearchText.value = newValue
+                            if (newValue.isEmpty()) {
+                                viewModel.clearSearchResults() // 검색어가 비어 있으면 결과 초기화
+                            } else {
+                                viewModel.searchMembers(newValue) // 검색어 변경 시 API 호출
+                            }
+                        },
+                        modifier = Modifier
+                            .padding(horizontal = 8.dp)
+                            .focusRequester(focusRequester)
+                            .onFocusChanged { focusState ->
+                                isFocused = focusState.isFocused // 포커스 상태 업데이트
                             },
-                            showDivider = index < searchResults.lastIndex
-                        )
-                    }
+                        decorationBox = { innerTextField ->
+                            if (handleSearchText.value.isEmpty()) {
+                                Text(
+                                    text = stringResource(id = R.string.feature_camera_tag_friend),
+                                    color = Color.Gray,
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                            }
+                            innerTextField()
+                        },
+                        textStyle = MaterialTheme.typography.bodyLarge,
+                        singleLine = true, // 한 줄 입력만 허용
+                        maxLines = 1 // 확실히 한 줄로 제한
+                    )
                 }
 
-                if (showTagDialog) {
-                    PochakAlertDialog(
-                        onDismiss = { showTagDialog = false },
-                        titleText = stringResource(R.string.feature_camera_tag_dialog_title),
-                        confirmButtonText = stringResource(R.string.feature_camera_dialog_confirm),
-                        onConfirmClick = { showTagDialog = false },
+                Spacer(modifier = Modifier.height(4.dp))
+
+                // 검색 결과 LazyColumn
+                when (searchMembersUiState) {
+                    is SearchMembersUiState.Success -> {
+                        LazyColumn(
+                            state = listState,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Gray02, shape = RoundedCornerShape(18.dp))
+                                .heightIn(max = 250.dp)
+                                .clipToBounds()
+                        ) {
+                            items(searchResults.size) { index ->
+                                val member = searchResults[index]
+                                SearchResultItem(
+                                    result = member,
+                                    onResultClick = {
+                                        handleSearchText.value = ""
+
+                                        if (member.handle !in selectedItems.value && selectedItems.value.size < 5) {
+                                            selectedItems.value += member.handle
+                                        } else if (selectedItems.value.size >= 5) {
+                                            showTagDialog = true
+                                        }
+                                        viewModel.clearSearchResults()  // 검색 결과 초기화
+                                        focusManager.clearFocus()
+                                    },
+                                    showDivider = index < searchResults.lastIndex
+                                )
+                            }
+                        }
+
+                        if (showTagDialog) {
+                            PochakAlertDialog(
+                                onDismiss = { showTagDialog = false },
+                                titleText = stringResource(R.string.feature_camera_tag_dialog_title),
+                                confirmButtonText = stringResource(R.string.feature_camera_dialog_confirm),
+                                onConfirmClick = { showTagDialog = false },
+                            )
+                        }
+                    }
+
+                    is SearchMembersUiState.Loading -> {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(250.dp) // LazyColumn과 동일한 높이 설정
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.align(Alignment.Center)
+                            )
+                        }
+                    }
+
+                    else -> {
+                    }
+                }
+            }
+
+            // 취소 버튼
+            if (isSearching) {
+                Box(
+                    modifier = Modifier
+                        .padding(start = 16.dp, top = 16.dp)
+                        .clickable(
+                            onClick = {
+                                handleSearchText.value = ""
+                                viewModel.clearSearchResults()
+                                focusManager.clearFocus()
+                                isFocused = false
+                            },
+                            indication = null,
+                            interactionSource = remember { MutableInteractionSource() }
+                        )
+                        .wrapContentSize()
+                ) {
+                    Text(
+                        text = stringResource(id = R.string.feature_camera_tag_cancel),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.Black
                     )
                 }
             }
-
-            is SearchMembersUiState.Loading -> {
-                CircularProgressIndicator(
-                    modifier = Modifier.align(Alignment.Center)
-                )
-            }
-
-            is SearchMembersUiState.Error -> {
-            }
-
-            else -> {
-            }
         }
-
     }
 }
 
@@ -452,8 +498,8 @@ fun SearchResultItem(
 ) {
     Column(
         modifier = modifier
+            .padding(horizontal = HorizontalPadding)
             .fillMaxWidth()
-            .padding(horizontal = 12.dp)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -508,7 +554,7 @@ fun SelectedItemView(
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
-            .background(Yellow02, shape = RoundedCornerShape(6.dp))
+            .background(Yellow02, shape = RoundedCornerShape(18.dp))
             .wrapContentWidth()
             .padding(horizontal = 10.dp, vertical = 8.dp)
     ) {
