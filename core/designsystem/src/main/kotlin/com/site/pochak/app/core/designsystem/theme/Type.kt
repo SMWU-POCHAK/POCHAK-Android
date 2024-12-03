@@ -1,10 +1,11 @@
 package com.site.pochak.app.core.designsystem.theme
 
-import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.site.pochak.app.core.designsystem.R
 
@@ -37,89 +38,92 @@ private val Pretendard = FontFamily(
  * caption2: Medium, 12px, 16px, 0px    -> labelMedium
  *
  */
-internal val PochakTypography = Typography(
-    displaySmall = TextStyle(
-        fontFamily = Pretendard,
+object PochakTypography {
+    data class FontInfo(
+        val fontFamily: FontFamily = Pretendard,
+        val fontWeight: FontWeight,
+        val fontSize: Float,
+        val lineHeight: Float,
+        val letterSpacing: Float = 0f
+    ) {
+        fun toTextStyle() = TextStyle(
+            fontFamily = fontFamily,
+            fontWeight = fontWeight,
+            fontSize = fontSize.sp,
+            lineHeight = lineHeight.sp,
+            letterSpacing = letterSpacing.sp
+        )
+
+        fun toTextStyleDp(density: Density) = with(density) {
+            TextStyle(
+                fontFamily = fontFamily,
+                fontWeight = fontWeight,
+                fontSize = fontSize.dp.toSp(),
+                lineHeight = lineHeight.dp.toSp(),
+                letterSpacing = letterSpacing.dp.toSp()
+            )
+        }
+    }
+
+    val displaySmall = FontInfo(
         fontWeight = FontWeight.Bold,
-        fontSize = 26.sp,
-        lineHeight = 30.sp,
-        letterSpacing = 0.sp
-    ),
-    headlineLarge = TextStyle(
-        fontFamily = Pretendard,
-        fontWeight = FontWeight.Bold,
-        fontSize = 22.sp,
-        lineHeight = 28.sp,
-        letterSpacing = 0.sp
-    ),
-    headlineMedium = TextStyle(
-        fontFamily = Pretendard,
-        fontWeight = FontWeight.Medium,
-        fontSize = 22.sp,
-        lineHeight = 28.sp,
-        letterSpacing = 0.sp
-    ),
-    headlineSmall = TextStyle(
-        fontFamily = Pretendard,
-        fontWeight = FontWeight.Bold,
-        fontSize = 20.sp,
-        lineHeight = 28.sp,
-        letterSpacing = 0.sp
-    ),
-    titleLarge = TextStyle(
-        fontFamily = Pretendard,
-        fontWeight = FontWeight.Medium,
-        fontSize = 20.sp,
-        lineHeight = 28.sp,
-        letterSpacing = 0.sp
-    ),
-    titleMedium = TextStyle(
-        fontFamily = Pretendard,
-        fontWeight = FontWeight.Bold,
-        fontSize = 18.sp,
-        lineHeight = 24.sp,
-        letterSpacing = 0.sp
-    ),
-    titleSmall = TextStyle(
-        fontFamily = Pretendard,
-        fontWeight = FontWeight.Bold,
-        fontSize = 16.sp,
-        lineHeight = 22.sp,
-        letterSpacing = 0.sp
-    ),
-    bodyLarge = TextStyle(
-        fontFamily = Pretendard,
-        fontWeight = FontWeight.Medium,
-        fontSize = 16.sp,
-        lineHeight = 22.sp,
-        letterSpacing = 0.sp
-    ),
-    bodyMedium = TextStyle(
-        fontFamily = Pretendard,
-        fontWeight = FontWeight.Normal,
-        fontSize = 14.sp,
-        lineHeight = 20.sp,
-        letterSpacing = 0.sp
-    ),
-    bodySmall = TextStyle(
-        fontFamily = Pretendard,
-        fontWeight = FontWeight.Bold,
-        fontSize = 14.sp,
-        lineHeight = 20.sp,
-        letterSpacing = 0.sp
-    ),
-    labelLarge = TextStyle(
-        fontFamily = Pretendard,
-        fontWeight = FontWeight.Bold,
-        fontSize = 12.sp,
-        lineHeight = 16.sp,
-        letterSpacing = 0.sp
-    ),
-    labelMedium = TextStyle(
-        fontFamily = Pretendard,
-        fontWeight = FontWeight.Medium,
-        fontSize = 12.sp,
-        lineHeight = 16.sp,
-        letterSpacing = 0.sp
+        fontSize = 26f,
+        lineHeight = 30f,
     )
-)
+    val headlineLarge = FontInfo(
+        fontWeight = FontWeight.Bold,
+        fontSize = 22f,
+        lineHeight = 28f,
+    )
+    val headlineMedium = FontInfo(
+        fontWeight = FontWeight.Medium,
+        fontSize = 22f,
+        lineHeight = 28f,
+    )
+    val headlineSmall = FontInfo(
+        fontWeight = FontWeight.Bold,
+        fontSize = 20f,
+        lineHeight = 28f,
+    )
+    val titleLarge = FontInfo(
+        fontWeight = FontWeight.Medium,
+        fontSize = 20f,
+        lineHeight = 28f,
+    )
+    val titleMedium = FontInfo(
+        fontWeight = FontWeight.Bold,
+        fontSize = 18f,
+        lineHeight = 24f,
+        letterSpacing = 0.1f
+    )
+    val titleSmall = FontInfo(
+        fontWeight = FontWeight.Bold,
+        fontSize = 16f,
+        lineHeight = 22f,
+    )
+    val bodyLarge = FontInfo(
+        fontWeight = FontWeight.Medium,
+        fontSize = 16f,
+        lineHeight = 22f,
+    )
+    val bodyMedium = FontInfo(
+        fontWeight = FontWeight.Normal,
+        fontSize = 14f,
+        lineHeight = 20f,
+    )
+    val bodySmall = FontInfo(
+        fontWeight = FontWeight.Bold,
+        fontSize = 14f,
+        lineHeight = 20f,
+    )
+    val labelLarge = FontInfo(
+        fontWeight = FontWeight.Bold,
+        fontSize = 12f,
+        lineHeight = 16f,
+    )
+    val labelMedium = FontInfo(
+        fontWeight = FontWeight.Medium,
+        fontSize = 12f,
+        lineHeight = 16f,
+    )
+}

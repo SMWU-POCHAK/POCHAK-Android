@@ -25,7 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.site.pochak.app.core.designsystem.theme.Gray01
 import com.site.pochak.app.core.designsystem.theme.Gray05
-import com.site.pochak.app.core.designsystem.theme.Yellow01
+import com.site.pochak.app.core.designsystem.theme.Yellow00
 
 @Composable
 fun PochakAlertDialog(
@@ -106,7 +106,7 @@ fun PochakAlertDialog(
                         Text(
                             text = confirmButtonText,
                             style = MaterialTheme.typography.titleSmall,
-                            color = Yellow01
+                            color = Yellow00
                         )
                     }
                 }

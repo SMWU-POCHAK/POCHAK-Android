@@ -1,5 +1,6 @@
 package com.site.pochak.app.core.network.model
 
+import com.site.pochak.app.core.model.data.Post
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -8,6 +9,14 @@ data class NetworkPost(
     val postImage: String,
     val postDate: String? = null,
 )
+
+fun NetworkPost.toModel(): Post {
+    return Post(
+        postId = postId,
+        postImage = postImage,
+        postDate = postDate,
+    )
+}
 
 @Serializable
 data class NetworkPostDetail(
