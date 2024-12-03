@@ -145,17 +145,20 @@ fun UploadScreen(
                 leftContent = { BackButton(onClick = { backPressed = true }) },
                 centerContent = { Text(text = stringResource(R.string.feature_camera_upload)) },
                 rightContent = {
-                    IconButton(onClick = {
-                        viewModel.postPost(
-                            postImage = compressImageFile(cachedImageFile, context),
-                            taggedMemberHandleList = selectedItems.value,
-                            caption = caption.value
-                        )
-                    }) {
+                    IconButton(
+                        onClick = {
+                            viewModel.postPost(
+                                postImage = compressImageFile(cachedImageFile, context),
+                                taggedMemberHandleList = selectedItems.value,
+                                caption = caption.value
+                            )
+                        },
+                        enabled = selectedItems.value.isNotEmpty() // selectedItems가 비어 있으면 비활성화
+                    ) {
                         Text(
                             text = stringResource(R.string.feature_camera_upload_button),
                             style = MaterialTheme.typography.bodySmall,
-                            color = Yellow01,
+                            color = if (selectedItems.value.isNotEmpty()) Yellow01 else Gray03, // 상태에 따른 색상
                         )
                     }
                 },
@@ -217,6 +220,15 @@ fun UploadScreen(
                     color = MaterialTheme.colorScheme.primary
                 )
             }
+        }
+
+        if (uploadUiState is UploadUiState.Failed) {
+            PochakAlertDialog(
+                onDismiss = {},
+                titleText = stringResource(R.string.feature_camera_upload_fail_title),
+                messageText = stringResource(R.string.feature_camera_upload_fail_message),
+                confirmButtonText = stringResource(R.string.feature_camera_dialog_confirm),
+            )
         }
     }
 }
@@ -409,7 +421,7 @@ private fun SearchScreen(
                     PochakAlertDialog(
                         onDismiss = { showTagDialog = false },
                         titleText = stringResource(R.string.feature_camera_tag_dialog_title),
-                        confirmButtonText = stringResource(R.string.feature_camera_tag_dialog_confirm),
+                        confirmButtonText = stringResource(R.string.feature_camera_dialog_confirm),
                         onConfirmClick = { showTagDialog = false },
                     )
                 }

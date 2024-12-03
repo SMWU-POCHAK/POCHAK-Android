@@ -12,6 +12,7 @@
     <string name="feature_camera_back_cancel">나가기</string>
     <string name="feature_camera_back_confirm">계속하기</string>
     <string name="feature_camera_tag_dialog_title">태그는 최대 5명까지 가능해요.</string>
-    // 확인
-    <string name="feature_camera_tag_dialog_confirm">확인</string>
+    <string name="feature_camera_dialog_confirm">확인</string>
+    <string name="feature_camera_upload_fail_title">업로드 실패</string>
+    <string name="feature_camera_upload_fail_message">업로드에 실패했습니다.\n다시 시도해주세요.</string>
 </resources>
