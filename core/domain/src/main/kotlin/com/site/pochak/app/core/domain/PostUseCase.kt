@@ -1,7 +1,9 @@
 package com.site.pochak.app.core.domain
 
+import android.net.http.HttpException
 import android.util.Log
 import com.site.pochak.app.core.data.repository.PostRepository
+import com.site.pochak.app.core.network.utils.ApiResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -19,23 +21,40 @@ class PostUseCase @Inject constructor(
         taggedMemberHandleList: List<String>,
         caption: String
     ): Flow<UploadUiState> = flow {
-        // 게시물 업로드를 시작할 때 Loading 상태를 방출
-        emit(UploadUiState.Loading)
+        emit(UploadUiState.Loading) // 업로드 시작 시 로딩 상태 방출
 
         try {
-            // 실제 게시물 업로드 API 호출 (IO 스레드에서 실행)
-            withContext(Dispatchers.IO) {
+            val result = withContext(Dispatchers.IO) {
                 postRepository.postPost(postImage, taggedMemberHandleList, caption)
             }
-            // 업로드 성공 시 Success 상태 방출
-            emit(UploadUiState.Success)
+
+            // ApiResult 기반 결과 처리
+            when (result) {
+                is ApiResult.Success<*> -> {
+                    emit(UploadUiState.Success) // 업로드 성공 시 성공 상태 방출
+                }
+                is ApiResult.SuccessNoResult -> {
+                    emit(UploadUiState.Success) // 성공 (결과 없음)
+                }
+                is ApiResult.Error -> {
+                    // 상태 코드가 500인지 확인
+                    if (result.code == "500") {
+                        emit(UploadUiState.Failed("Internal Server Error (500)"))
+                    } else {
+                        emit(UploadUiState.Failed("Error ${result.code}: ${result.message}"))
+                    }
+                }
+                is ApiResult.UnknownError -> {
+                    emit(UploadUiState.Failed("An unknown error occurred"))
+                }
+            }
         } catch (e: Exception) {
-            // 오류가 발생하면 Failed 상태 방출
             Log.e(TAG, "Post Error: $e")
             emit(UploadUiState.Failed(e.message ?: "Unknown error"))
         }
     }
 }
+
 
 // 게시물 생성 상태를 나타내는 sealed interface
 sealed interface UploadUiState {
