@@ -70,6 +70,7 @@ fun PochakNavHost(
         uploadScreen(
             navigateToHome = {
                 appState.navigateToTopLevelDestination(HOME, inclusive = true)
+                navController.navigate(HomeRoute)
             },
             onBackClick = {
                 navController.popBackStack()

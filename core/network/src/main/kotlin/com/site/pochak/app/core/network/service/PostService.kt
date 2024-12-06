@@ -38,7 +38,7 @@ interface PostService {
     suspend fun postPost(
         @Part postImage: MultipartBody.Part,
 
-        @Query("taggedMemberHandleList") taggedMemberHandleList: List<String>,
+        @Query("taggedMemberHandleList") taggedMemberHandleList: String,
         @Query("caption") caption: String
     ): NetworkResponse<Unit>
 
