@@ -1,6 +1,5 @@
 plugins {
     alias(libs.plugins.pochak.android.library)
-    alias(libs.plugins.pochak.android.room)
     alias(libs.plugins.pochak.hilt)
 }
 
