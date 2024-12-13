@@ -1,17 +1,16 @@
 package com.site.pochak.app.feature.post
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
@@ -45,6 +44,7 @@ import com.site.pochak.app.core.ui.postFeed
 internal fun PostRoute(
     modifier: Modifier = Modifier,
     viewModel: PostViewModel = hiltViewModel(),
+    navigateToSearchHistory: () -> Unit,
 ) {
     val postPosts = viewModel.postPosts.collectAsStateWithLifecycle()
     val isLoading = viewModel.isLoading.collectAsStateWithLifecycle()
@@ -56,6 +56,7 @@ internal fun PostRoute(
         isLoading = isLoading.value,
         isRefreshing = isRefreshing.value,
         onLoadPage = viewModel::loadPage,
+        navigateToSearchHistory = navigateToSearchHistory,
     )
 }
 
@@ -66,18 +67,16 @@ internal fun PostScreen(
     isLoading: Boolean,
     isRefreshing: Boolean,
     onLoadPage: (Boolean) -> Unit,
+    navigateToSearchHistory: () -> Unit
 ) {
     Column(
         modifier = modifier
             .fillMaxSize()
             .consumeWindowInsets(WindowInsets.safeDrawing.only(WindowInsetsSides.Top))
     ) {
-        postSearchContent(
+        postSearchBar(
             modifier = Modifier.padding(horizontal = HorizontalPadding),
-            postPosts = postPosts,
-            isLoading = isLoading,
-            isRefreshing = isRefreshing,
-            onLoadPage = onLoadPage,
+            navigateToSearchHistory = navigateToSearchHistory,
         )
 
         PostContent(
@@ -91,24 +90,23 @@ internal fun PostScreen(
 }
 
 @Composable
-private fun postSearchContent(
+private fun postSearchBar(
     modifier: Modifier = Modifier,
-    postPosts: List<Post>,
-    isLoading: Boolean,
-    isRefreshing: Boolean,
-    onLoadPage: (Boolean) -> Unit,
+    navigateToSearchHistory: () -> Unit
 ) {
     Box(
-        modifier = Modifier.fillMaxWidth()
+        modifier = modifier
+            .fillMaxWidth()
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = modifier
+            modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 12.dp, bottom = 24.dp)
                 .height(48.dp)
                 .align(Alignment.TopCenter)  // Aligns the Row to the top center of the Box
                 .background(Gray0_5, shape = RoundedCornerShape(18.dp))
+                .clickable { navigateToSearchHistory() }
         ) {
             Icon(
                 painter = painterResource(id = PochakIcons.Search),
@@ -122,7 +120,7 @@ private fun postSearchContent(
                 text = stringResource(id = R.string.feature_post_search_placeholder),
                 color = Gray03,
                 style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.padding(start = 12.dp)  // Adjust spacing between Icon and Text
+                modifier = Modifier.padding(start = 12.dp)
             )
         }
     }
