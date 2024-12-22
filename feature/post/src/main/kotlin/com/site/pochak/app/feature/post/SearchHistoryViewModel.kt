@@ -50,59 +50,58 @@ class SearchHistoryViewModel @Inject constructor(
         loadRecentSearches() // 초기화 시 최근 검색어 불러오기
     }
 
-    // 최근 검색어 불러오기
-    private fun loadRecentSearches() {
-        viewModelScope.launch {
-            _recentSearches.value = recentSearchDao.getAllRecentSearches() // DAO를 통해 데이터 로드
-        }
+    /**
+     * 검색 기록 및 멤버 검색 작업을 관리하는 ViewModel
+     */
+    private fun loadRecentSearches() = viewModelScope.launch {
+        _recentSearches.value = recentSearchDao.getAllRecentSearches()
     }
 
-    // 최근 검색어 추가
-    fun addSearchItem(handle: String, name: String, profileImageUrl: String) {
-        viewModelScope.launch {
-            val existingSearch = recentSearchDao.getRecentSearchByHandle(handle) // 기존 검색 확인
-            if (existingSearch != null) {
-                // 기존 항목의 timestamp 갱신
-                val updatedSearch = existingSearch.copy(timestamp = Date().time)
-                recentSearchDao.insertRecentSearch(updatedSearch)
-            } else {
-                // 새로운 검색어 추가
-                val newSearch = RecentSearch(
-                    id = UUID.randomUUID().toString(),
-                    handle = handle,
-                    name = name,
-                    profileImage = profileImageUrl,
-                    timestamp = Date().time
-                )
-                recentSearchDao.insertRecentSearch(newSearch)
-            }
-            loadRecentSearches() // 업데이트된 데이터 로드
-        }
+    /**
+     * 새로운 검색 항목을 최근 검색 목록에 추가하거나, 이미 존재하는 경우 타임스탬프 업데이트.
+     *
+     * @param handle 검색된 멤버의 고유 핸들.
+     * @param name 검색된 멤버의 이름.
+     * @param profileImageUrl 검색된 멤버의 프로필 이미지 URL.
+     */
+    fun addSearchItem(handle: String, name: String, profileImageUrl: String) = viewModelScope.launch {
+        val existingSearch = recentSearchDao.getRecentSearchByHandle(handle)
+        val searchToInsert = existingSearch?.copy(timestamp = Date().time) ?: RecentSearch(
+            id = UUID.randomUUID().toString(),
+            handle = handle,
+            name = name,
+            profileImage = profileImageUrl,
+            timestamp = Date().time
+        )
+        recentSearchDao.insertRecentSearch(searchToInsert)
+        loadRecentSearches()
     }
 
-    // 특정 검색어 삭제
-    fun removeSearchItem(itemId: String) {
-        viewModelScope.launch {
-            recentSearchDao.deleteRecentSearchById(itemId) // DAO를 통해 데이터 삭제
-            loadRecentSearches() // 업데이트된 데이터 로드
-        }
+    /**
+     * 특정 검색 항목을 최근 검색 목록에서 삭제.
+     *
+     * @param itemId 삭제할 검색 항목의 고유 ID.
+     */
+    fun removeSearchItem(itemId: String) = viewModelScope.launch {
+        recentSearchDao.deleteRecentSearchById(itemId)
+        loadRecentSearches()
     }
 
-    // 전체 삭제
-    fun clearAllSearches() {
-        viewModelScope.launch {
-            recentSearchDao.deleteAllRecentSearches() // DAO를 통해 데이터 전부 삭제
-            loadRecentSearches() // 업데이트된 데이터 로드
-        }
+    /**
+     * 최근 검색 목록에서 모든 검색 항목 삭제.
+     */
+    fun clearAllSearches() = viewModelScope.launch {
+        recentSearchDao.deleteAllRecentSearches()
+        loadRecentSearches()
     }
 
+    /**
+     * 현재 키워드를 기반으로 멤버를 검색하며, 선택적으로 새로고침 및 페이징.
+     *
+     * @param isRefresh 검색 결과를 새로고침할지 여부. 기본값은 true.
+     */
     fun searchMembers(isRefresh: Boolean = true) {
-        if (isRefresh) {
-            currentPage = 0
-            isLastPage = false
-            _searchResults.value = emptyList() // 기존 결과 초기화
-        }
-
+        if (isRefresh) resetSearchState()
         if (isLastPage) return
 
         _isLoading.value = true
@@ -110,39 +109,59 @@ class SearchHistoryViewModel @Inject constructor(
 
         viewModelScope.launch {
             searchUseCase(currentKeyword.value, currentPage).collect { state ->
-                when (state) {
-                    is SearchMembersUiState.Success -> {
-                        val updatedResults = if (isRefresh) {
-                            state.members
-                        } else {
-                            _searchResults.value + state.members
-                        }
-                        _searchResults.value = updatedResults
-                        _searchMembersUiState.value = SearchMembersUiState.Success(updatedResults)
-
-                        // 페이징 처리
-                        currentPage++
-                        isLastPage = state.members.isEmpty() // 결과가 없으면 마지막 페이지로 설정
-                    }
-                    is SearchMembersUiState.Error -> {
-                        _searchMembersUiState.value = state // 에러 상태 업데이트
-                    }
-                    else -> {
-                        _searchMembersUiState.value = SearchMembersUiState.Empty
-                    }
-                }
-
+                handleSearchState(state, isRefresh)
                 _isLoading.value = false
                 _isRefreshing.value = false
             }
         }
     }
 
-    // 검색 결과를 지우는 함수
+    /**
+     * 검색 상태를 초기화하고 페이징 및 검색 결과 리셋.
+     */
+    private fun resetSearchState() {
+        currentPage = 0
+        isLastPage = false
+        _searchResults.value = emptyList()
+    }
+
+    /**
+     * 멤버 검색 작업의 상태 처리.
+     * 검색 결과를 업데이트하고 페이징 관리.
+     *
+     * @param state 멤버 검색 작업의 현재 상태.
+     * @param isRefresh 검색 결과가 새로고침 중인지 여부.
+     */
+    private fun handleSearchState(state: SearchMembersUiState, isRefresh: Boolean) {
+        when (state) {
+            is SearchMembersUiState.Success -> {
+                val updatedResults = if (isRefresh) state.members else _searchResults.value + state.members
+                _searchResults.value = updatedResults
+                _searchMembersUiState.value = SearchMembersUiState.Success(updatedResults)
+                currentPage++
+                isLastPage = state.members.isEmpty()
+            }
+            is SearchMembersUiState.Error -> {
+                _searchMembersUiState.value = state
+            }
+            else -> {
+                _searchMembersUiState.value = SearchMembersUiState.Empty
+            }
+        }
+    }
+
+    /**
+     * 현재 검색 결과 초기화.
+     */
     fun clearSearchResults() {
         _searchResults.value = emptyList()
     }
 
+    /**
+     * 현재 검색 키워드 업데이트.
+     *
+     * @param keyword 새로운 검색 키워드.
+     */
     fun updateKeyword(keyword: String) {
         _currentKeyword.value = keyword
     }
