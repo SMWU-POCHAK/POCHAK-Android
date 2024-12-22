@@ -14,5 +14,6 @@ object PochakIcons {
     val Profile = R.drawable.ic_profile
     val ProfileFilled = R.drawable.ic_profile_filled
     val Search = R.drawable.ic_search
-    val Delete = R.drawable.ic_delete
+    val DeleteGray06 = R.drawable.ic_delete_gray06
+    val DeleteGray04 = R.drawable.ic_delete_gray04
 }

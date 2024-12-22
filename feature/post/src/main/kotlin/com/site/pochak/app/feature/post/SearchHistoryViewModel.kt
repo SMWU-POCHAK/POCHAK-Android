@@ -1,7 +1,5 @@
 package com.site.pochak.app.feature.post
 
-import androidx.compose.runtime.State
-import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -30,11 +28,23 @@ class SearchHistoryViewModel @Inject constructor(
     private val _recentSearches = MutableLiveData<List<RecentSearch>>()
     val recentSearches: LiveData<List<RecentSearch>> = _recentSearches
 
+    private val _currentKeyword = MutableStateFlow("")
+    val currentKeyword: StateFlow<String> = _currentKeyword
+
     private val _searchMembersUiState = MutableStateFlow<SearchMembersUiState>(SearchMembersUiState.Empty)
     val searchMembersUiState: StateFlow<SearchMembersUiState> = _searchMembersUiState
 
-    private val _searchResults = mutableStateOf<List<NetworkMember>>(emptyList())
-    val searchResults: State<List<NetworkMember>> = _searchResults
+    private val _searchResults = MutableStateFlow<List<NetworkMember>>(emptyList())
+    val searchResults: StateFlow<List<NetworkMember>> = _searchResults
+
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading
+
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing
+
+    private var currentPage = 0
+    private var isLastPage = false
 
     init {
         loadRecentSearches() // 초기화 시 최근 검색어 불러오기
@@ -49,16 +59,23 @@ class SearchHistoryViewModel @Inject constructor(
 
     // 최근 검색어 추가
     fun addSearchItem(handle: String, name: String, profileImageUrl: String) {
-        val newSearch = RecentSearch(
-            id = UUID.randomUUID().toString(),
-            handle = handle,
-            name = name,
-            profileImage = profileImageUrl,
-            timestamp = Date().time
-        )
-
         viewModelScope.launch {
-            recentSearchDao.insertRecentSearch(newSearch) // DAO를 통해 데이터 삽입
+            val existingSearch = recentSearchDao.getRecentSearchByHandle(handle) // 기존 검색 확인
+            if (existingSearch != null) {
+                // 기존 항목의 timestamp 갱신
+                val updatedSearch = existingSearch.copy(timestamp = Date().time)
+                recentSearchDao.insertRecentSearch(updatedSearch)
+            } else {
+                // 새로운 검색어 추가
+                val newSearch = RecentSearch(
+                    id = UUID.randomUUID().toString(),
+                    handle = handle,
+                    name = name,
+                    profileImage = profileImageUrl,
+                    timestamp = Date().time
+                )
+                recentSearchDao.insertRecentSearch(newSearch)
+            }
             loadRecentSearches() // 업데이트된 데이터 로드
         }
     }
@@ -79,11 +96,44 @@ class SearchHistoryViewModel @Inject constructor(
         }
     }
 
-    fun searchMembers(keyword: String, page: Int = 0) {
+    fun searchMembers(isRefresh: Boolean = true) {
+        if (isRefresh) {
+            currentPage = 0
+            isLastPage = false
+            _searchResults.value = emptyList() // 기존 결과 초기화
+        }
+
+        if (isLastPage) return
+
+        _isLoading.value = true
+        _isRefreshing.value = isRefresh
+
         viewModelScope.launch {
-            _searchMembersUiState.value = SearchMembersUiState.Loading  // 로딩 상태
-            searchUseCase(keyword, page).collect { state ->
-                _searchMembersUiState.value = state  // 결과 상태 업데이트
+            searchUseCase(currentKeyword.value, currentPage).collect { state ->
+                when (state) {
+                    is SearchMembersUiState.Success -> {
+                        val updatedResults = if (isRefresh) {
+                            state.members
+                        } else {
+                            _searchResults.value + state.members
+                        }
+                        _searchResults.value = updatedResults
+                        _searchMembersUiState.value = SearchMembersUiState.Success(updatedResults)
+
+                        // 페이징 처리
+                        currentPage++
+                        isLastPage = state.members.isEmpty() // 결과가 없으면 마지막 페이지로 설정
+                    }
+                    is SearchMembersUiState.Error -> {
+                        _searchMembersUiState.value = state // 에러 상태 업데이트
+                    }
+                    else -> {
+                        _searchMembersUiState.value = SearchMembersUiState.Empty
+                    }
+                }
+
+                _isLoading.value = false
+                _isRefreshing.value = false
             }
         }
     }
@@ -91,5 +141,9 @@ class SearchHistoryViewModel @Inject constructor(
     // 검색 결과를 지우는 함수
     fun clearSearchResults() {
         _searchResults.value = emptyList()
+    }
+
+    fun updateKeyword(keyword: String) {
+        _currentKeyword.value = keyword
     }
 }

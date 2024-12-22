@@ -363,7 +363,7 @@ fun SelectedItemView(
                 .clickable {
                     onDeleteClick(item)
                 },
-            painter = painterResource(id = PochakIcons.Delete),
+            painter = painterResource(id = PochakIcons.DeleteGray06),
             contentDescription = "profile image"
         )
     }

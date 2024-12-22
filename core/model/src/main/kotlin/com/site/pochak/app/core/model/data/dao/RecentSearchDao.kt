@@ -19,4 +19,7 @@ interface RecentSearchDao {
 
     @Query("DELETE FROM recent_searches")
     suspend fun deleteAllRecentSearches()
+
+    @Query("SELECT * FROM recent_searches WHERE handle = :handle LIMIT 1")
+    suspend fun getRecentSearchByHandle(handle: String): RecentSearch?
 }

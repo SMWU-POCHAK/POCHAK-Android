@@ -112,7 +112,7 @@ private fun postSearchBar(
                 painter = painterResource(id = PochakIcons.Search),
                 contentDescription = "Search Icon",
                 modifier = Modifier
-                    .padding(start = 10.dp)
+                    .padding(start = 12.dp)
                     .size(24.dp)
             )
 

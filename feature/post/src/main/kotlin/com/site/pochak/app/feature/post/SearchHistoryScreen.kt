@@ -1,5 +1,7 @@
 package com.site.pochak.app.feature.post
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -16,12 +18,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -68,7 +69,6 @@ internal fun SearchHistoryRoute(
     SearchHistoryScreen(
         modifier = modifier.padding(horizontal = HorizontalPadding),
         viewModel = viewModel,
-        searchMembersUiState = searchMembersUiState
     )
 }
 
@@ -76,11 +76,12 @@ internal fun SearchHistoryRoute(
 internal fun SearchHistoryScreen(
     modifier: Modifier = Modifier,
     viewModel: SearchHistoryViewModel,
-    searchMembersUiState: SearchMembersUiState,
 ) {
     val recentSearches by viewModel.recentSearches.observeAsState(emptyList())
-    val isSearching = searchMembersUiState is SearchMembersUiState.Success ||
-            searchMembersUiState is SearchMembersUiState.Loading
+    val currentKeyword by viewModel.currentKeyword.collectAsStateWithLifecycle()
+    val isSearching = currentKeyword.isNotEmpty()
+    val searchResults by viewModel.searchResults.collectAsStateWithLifecycle()
+    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
 
     Column(
         modifier = modifier
@@ -88,26 +89,23 @@ internal fun SearchHistoryScreen(
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.Start
     ) {
-        // Search bar at the top
         SearchBar(
             modifier = Modifier.fillMaxWidth(),
             viewModel = viewModel,
         )
 
-        // Show Recent Searches or Search Results
         if (!isSearching) {
-            // When not searching, show RecentSearchesContent
             RecentSearchesContent(
+                modifier = Modifier.fillMaxWidth(),
+                viewModel = viewModel,
                 recentSearches = recentSearches,
-                onDelete = { viewModel.removeSearchItem(it.id) },
-                onClearAll = { viewModel.clearAllSearches() }
             )
         } else {
-            // When searching, show SearchResultsContent
             SearchResultsContent(
                 modifier = Modifier.fillMaxWidth(),
-                searchMembersUiState = searchMembersUiState,
                 viewModel = viewModel,
+                searchResults = searchResults,
+                isLoading = isLoading,
                 onClick = {
                     // 해당 프로필로 이동
                 }
@@ -124,23 +122,34 @@ fun SearchBar(
     val handleSearchText = rememberSaveable { mutableStateOf("") }
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
-    var isFocused by remember { mutableStateOf(false) } // 포커스 여부
-    val isSearching = handleSearchText.value.isNotEmpty() || isFocused // 포커스 여부와 입력 상태 확인
+    var isFocused by remember { mutableStateOf(false) }
+    val isSearching = handleSearchText.value.isNotEmpty() || isFocused
+
+    if (isSearching) {
+        BackHandler {
+            handleSearchText.value = ""
+            viewModel.clearSearchResults()
+            viewModel.updateKeyword("")
+            focusManager.clearFocus()
+            isFocused = false
+        }
+    }
 
     Box(
         modifier = modifier
             .fillMaxWidth()
     ) {
         Row(
-            verticalAlignment = Alignment.Top, // 취소 버튼을 Row의 위쪽에 정렬
+            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .fillMaxWidth()
+                .padding(top = 12.dp, bottom = 24.dp)
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 12.dp, bottom = 24.dp)
+                    .weight(1f) // 취소 버튼과 공간을 나누기 위해 Weight 사용
                     .height(48.dp)
                     .background(Gray0_5, shape = RoundedCornerShape(18.dp))
             ) {
@@ -148,7 +157,7 @@ fun SearchBar(
                     painter = painterResource(id = PochakIcons.Search),
                     contentDescription = "Search Icon",
                     modifier = Modifier
-                        .padding(start = 10.dp)
+                        .padding(start = 12.dp)
                         .size(24.dp)
                 )
 
@@ -156,10 +165,11 @@ fun SearchBar(
                     value = handleSearchText.value,
                     onValueChange = { newValue ->
                         handleSearchText.value = newValue
+                        viewModel.updateKeyword(newValue) // ViewModel의 검색어 상태 업데이트
                         if (newValue.isEmpty()) {
-                            viewModel.clearSearchResults() // 검색어가 비어 있으면 결과 초기화
+                            viewModel.clearSearchResults()
                         } else {
-                            viewModel.searchMembers(newValue) // 검색어 변경 시 API 호출
+                            viewModel.searchMembers(isRefresh = true)
                         }
                     },
                     modifier = Modifier
@@ -179,21 +189,20 @@ fun SearchBar(
                         innerTextField()
                     },
                     textStyle = MaterialTheme.typography.bodyLarge,
-                    singleLine = true, // 한 줄 입력만 허용
-                    maxLines = 1 // 확실히 한 줄로 제한
+                    singleLine = true,
+                    maxLines = 1
                 )
             }
-
-
             // 취소 버튼
             if (isSearching) {
                 Box(
                     modifier = Modifier
-                        .padding(start = 16.dp, top = 16.dp)
+                        .padding(start = 16.dp)
                         .clickable(
                             onClick = {
                                 handleSearchText.value = ""
                                 viewModel.clearSearchResults()
+                                viewModel.updateKeyword("")
                                 focusManager.clearFocus()
                                 isFocused = false
                             },
@@ -215,13 +224,13 @@ fun SearchBar(
 
 @Composable
 fun RecentSearchesContent(
+    modifier: Modifier,
+    viewModel: SearchHistoryViewModel,
     recentSearches: List<RecentSearch>,
-    onDelete: (RecentSearch) -> Unit,
-    onClearAll: () -> Unit,
 ) {
-    Column(modifier = Modifier
-        .fillMaxWidth()
-        ) {
+    Column(
+        modifier = modifier
+    ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
@@ -234,7 +243,9 @@ fun RecentSearchesContent(
             Box(
                 modifier = Modifier
                     .clickable(
-                        onClick = onClearAll,
+                        onClick = {
+                            viewModel.clearSearchResults()
+                        },
                         indication = null,
                         interactionSource = remember { MutableInteractionSource() }
                     )
@@ -251,8 +262,8 @@ fun RecentSearchesContent(
         // 최근 검색어 리스트
         RecentSearchItem(
             modifier = Modifier,
+            viewModel = viewModel,
             recentSearches = recentSearches,
-            onDelete = onDelete,
             onClick = {
                 // 해당 프로필로 이동
             }
@@ -264,24 +275,31 @@ fun RecentSearchesContent(
 @Composable
 fun RecentSearchItem(
     modifier: Modifier,
+    viewModel: SearchHistoryViewModel,
     recentSearches: List<RecentSearch>,
-    onDelete: (RecentSearch) -> Unit,
     onClick: (RecentSearch) -> Unit
 ) {
     RefreshableLazyVerticalGrid(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier
+            .fillMaxSize()
+            .padding(top = 24.dp),
         contentPadding = PaddingValues(
             horizontal = 0.dp
         ),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         if (recentSearches.isNotEmpty()) {
-            items(recentSearches) { recentSearch ->
+            items(recentSearches) { member ->
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable {
-                            onClick(recentSearch) // 추가 클릭 이벤트 핸들링
+                            viewModel.addSearchItem(
+                                handle = member.handle,
+                                name = member.name,
+                                profileImageUrl = member.profileImage
+                            )
+                            onClick(member) // 추가 클릭 이벤트 핸들링
                         },
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -289,27 +307,38 @@ fun RecentSearchItem(
                         modifier = Modifier
                             .size(52.dp)
                             .clip(CircleShape),
-                        model = recentSearch.profileImage,
+                        model = member.profileImage,
                         contentDescription = "profile image",
                         contentScale = ContentScale.Crop,
                     )
 
                     Spacer(modifier = Modifier.width(12.dp))
 
-                    // 사용자 이름 및 추가 정보
                     Column {
                         Text(
-                            text = recentSearch.handle,
-                            style = MaterialTheme.typography.bodyLarge,
+                            text = member.handle,
+                            style = MaterialTheme.typography.bodySmall,
                             color = Color.Black
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = recentSearch.name,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color.Gray
+                            text = member.name,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.Black
                         )
                     }
+
+                    Spacer(modifier = Modifier.weight(1f)) // 남은 공간 채우기
+
+                    Image(
+                        modifier = modifier
+                            .size(20.dp)
+                            .clickable {
+                                viewModel.removeSearchItem(member.id)
+                            },
+                        painter = painterResource(id = PochakIcons.DeleteGray04),
+                        contentDescription = "delete icon",
+                    )
                 }
             }
         }
@@ -319,68 +348,70 @@ fun RecentSearchItem(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchResultsContent(
-    modifier: Modifier,
-    searchMembersUiState: SearchMembersUiState,
+    modifier: Modifier = Modifier,
     viewModel: SearchHistoryViewModel,
-    onClick: (NetworkMember) -> Unit // 클릭 시 실행할 콜백 함수
+    searchResults: List<NetworkMember>,
+    isLoading: Boolean,
+    onClick: (NetworkMember) -> Unit // 항목 클릭 콜백
 ) {
     RefreshableLazyVerticalGrid(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier,
         contentPadding = PaddingValues(
             horizontal = 0.dp
         ),
         verticalArrangement = Arrangement.spacedBy(16.dp),
-        loadMore = { viewModel.searchMembers("keyword") },
+        loadMore = { isRefresh -> viewModel.searchMembers(isRefresh) },
     ) {
-        when (searchMembersUiState) {
-            is SearchMembersUiState.Success -> {
-                val members = searchMembersUiState.members
-                items(members) { member ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                viewModel.addSearchItem(
-                                    handle = member.handle,
-                                    name = member.name,
-                                    profileImageUrl = member.profileImage
-                                )
-                                onClick(member) // 추가 클릭 이벤트 핸들링
-                            },
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        AsyncImage(
-                            modifier = Modifier
-                                .size(52.dp)
-                                .clip(CircleShape),
-                            model = member.profileImage,
-                            contentDescription = "profile image",
-                            contentScale = ContentScale.Crop,
+        items(searchResults) { member ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        viewModel.addSearchItem(
+                            handle = member.handle,
+                            name = member.name,
+                            profileImageUrl = member.profileImage
                         )
+                        onClick(member) // 추가 클릭 이벤트 핸들링
+                    },
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                AsyncImage(
+                    modifier = Modifier
+                        .size(52.dp)
+                        .clip(CircleShape),
+                    model = member.profileImage,
+                    contentDescription = "profile image",
+                    contentScale = ContentScale.Crop,
+                )
 
-                        Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(12.dp))
 
-                        // 사용자 이름 및 추가 정보
-                        Column {
-                            Text(
-                                text = member.handle,
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = Color.Black
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = member.name,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Color.Gray
-                            )
-                        }
-                    }
+                Column {
+                    Text(
+                        text = member.handle,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.Black
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = member.name,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.Black
+                    )
                 }
             }
-            is SearchMembersUiState.Error -> {
-                // dialog
+        }
+
+        if (isLoading) {
+            item {
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    CircularProgressIndicator()
+                }
             }
-            else -> { }
         }
     }
 }
