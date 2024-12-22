@@ -8,7 +8,7 @@ import com.site.pochak.app.core.model.data.RecentSearch
 
 @Dao
 interface RecentSearchDao {
-    @Query("SELECT * FROM recent_searches ORDER BY timestamp DESC")
+    @Query("SELECT * FROM recent_searches ORDER BY timestamp DESC LIMIT 30")
     suspend fun getAllRecentSearches(): List<RecentSearch>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
