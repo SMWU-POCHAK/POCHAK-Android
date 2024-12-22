@@ -244,7 +244,7 @@ fun RecentSearchesContent(
                 modifier = Modifier
                     .clickable(
                         onClick = {
-                            viewModel.clearSearchResults()
+                            viewModel.clearAllSearches()
                         },
                         indication = null,
                         interactionSource = remember { MutableInteractionSource() }
