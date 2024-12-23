@@ -11,7 +11,7 @@ import com.site.pochak.app.core.model.data.Post
 
 fun LazyGridScope.postFeed(
     postList: List<Post>,
-    onItemClick: (Post) -> Unit = {},
+    onItemClick: (Int) -> Unit = {},
 ) {
     items(postList, key = { it.postId }) { post ->
         AsyncImage(
@@ -20,7 +20,7 @@ fun LazyGridScope.postFeed(
             contentScale = ContentScale.FillWidth,
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { onItemClick(post) },
+                .clickable { onItemClick(post.postId) },
         )
     }
 }

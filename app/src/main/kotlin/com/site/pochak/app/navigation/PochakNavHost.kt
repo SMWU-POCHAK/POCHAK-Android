@@ -16,6 +16,8 @@ import com.site.pochak.app.feature.home.navigation.homeScreen
 import com.site.pochak.app.feature.login.navigation.LoginRoute
 import com.site.pochak.app.feature.login.navigation.loginScreen
 import com.site.pochak.app.feature.login.navigation.navigateToLogin
+import com.site.pochak.app.feature.post.detail.navigation.navigateToPostDetail
+import com.site.pochak.app.feature.post.detail.navigation.postDetailScreen
 import com.site.pochak.app.feature.profile.navigation.profileScreen
 import com.site.pochak.app.feature.profile.setting.navigation.navigateToProfileSetting
 import com.site.pochak.app.feature.profile.setting.navigation.profileSettingScreen
@@ -62,8 +64,11 @@ fun PochakNavHost(
             },
             navigateToSignUp = navController::navigateToProfileSetting,
         )
-        homeScreen()
+        homeScreen(
+            navigateToPostDetail = navController::navigateToPostDetail
+        )
         postScreen()
+        postDetailScreen()
         cameraScreen(
             navigateToUpload = navController::navigateToUpload
         )

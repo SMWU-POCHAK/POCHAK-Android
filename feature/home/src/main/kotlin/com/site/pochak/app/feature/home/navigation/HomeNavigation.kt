@@ -11,8 +11,12 @@ import kotlinx.serialization.Serializable
 
 fun NavController.navigateToHome(navOptions: NavOptions? = null) = navigate(HomeRoute, navOptions)
 
-fun NavGraphBuilder.homeScreen() {
+fun NavGraphBuilder.homeScreen(
+    navigateToPostDetail: (Int) -> Unit,
+) {
     composable<HomeRoute> {
-        HomeRoute()
+        HomeRoute(
+            navigateToPostDetail = navigateToPostDetail
+        )
     }
 }
