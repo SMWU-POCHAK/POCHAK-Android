@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.pochak.android.application.compose)
     alias(libs.plugins.pochak.hilt)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.gms)
 }
 
 android {
@@ -57,6 +58,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines.guava)
     implementation(libs.coil.kt)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.firebase.messaging.ktx)
 
     ksp(libs.hilt.compiler)
 
@@ -66,4 +68,5 @@ dependencies {
     testImplementation(libs.kotlin.test)
 
     androidTestImplementation(kotlin("test"))
+
 }
