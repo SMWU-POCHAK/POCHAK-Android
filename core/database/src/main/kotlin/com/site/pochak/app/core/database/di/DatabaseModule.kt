@@ -1,9 +1,9 @@
-package com.site.pochak.app.core.data.di
+package com.site.pochak.app.core.database.di
 
 import android.content.Context
 import androidx.room.Room
-import com.site.pochak.app.core.data.database.AppDatabase
-import com.site.pochak.app.core.model.data.dao.RecentSearchDao
+import com.site.pochak.app.core.database.AppDatabase
+import com.site.pochak.app.core.database.dao.RecentSearchDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

@@ -1,4 +1,4 @@
-package com.site.pochak.app.core.model.data.dao
+package com.site.pochak.app.core.database.dao
 
 import androidx.room.Dao
 import androidx.room.Insert

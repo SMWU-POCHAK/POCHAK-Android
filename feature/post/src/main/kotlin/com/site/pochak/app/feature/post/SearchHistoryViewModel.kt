@@ -7,7 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.site.pochak.app.core.domain.SearchMembersUiState
 import com.site.pochak.app.core.domain.SearchUseCase
 import com.site.pochak.app.core.model.data.RecentSearch
-import com.site.pochak.app.core.model.data.dao.RecentSearchDao
+import com.site.pochak.app.core.database.dao.RecentSearchDao
 import com.site.pochak.app.core.network.model.NetworkMember
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
