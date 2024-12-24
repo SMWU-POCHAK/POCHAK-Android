@@ -59,6 +59,7 @@ dependencies {
     implementation(libs.coil.kt)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.firebase.messaging.ktx)
+    implementation(project(":core:datastore"))
 
     ksp(libs.hilt.compiler)
 
