@@ -2,7 +2,9 @@ package com.site.pochak.app.core.designsystem.component
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.dp
 
 /**
  * Pochak typography.
@@ -17,6 +19,7 @@ import androidx.compose.ui.text.TextStyle
  * body2: Medium, 16px, 22px, 0px       -> bodyLarge
  * body3: Regular, 14px, 20px, 0px      -> bodyMedium
  * body3-1: Bold, 14px, 20px, 0px       -> bodySmall
+ * body4: Regular, 13px, 18px, 0px      -> bodyMedium
  * caption1: Bold, 12px, 16px, 0px      -> labelLarge
  * caption2: Medium, 12px, 16px, 0px    -> labelMedium
  *
@@ -51,6 +54,11 @@ object PochakTextStyle {
 
     val body3_1: TextStyle
         @Composable get() = MaterialTheme.typography.bodySmall
+
+    val body4: TextStyle
+        @Composable get() = LocalDensity.current.run {
+            body3.copy(fontSize = 13.dp.toSp(), lineHeight = 18.dp.toSp())
+        }
 
     val caption1: TextStyle
         @Composable get() = MaterialTheme.typography.labelLarge
