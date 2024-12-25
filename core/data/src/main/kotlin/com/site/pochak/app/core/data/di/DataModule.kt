@@ -6,6 +6,8 @@ import com.site.pochak.app.core.data.repository.BlockRepository
 import com.site.pochak.app.core.data.repository.BlockRepositoryImpl
 import com.site.pochak.app.core.data.repository.CommentRepository
 import com.site.pochak.app.core.data.repository.CommentRepositoryImpl
+import com.site.pochak.app.core.data.repository.FcmRepository
+import com.site.pochak.app.core.data.repository.FcmRepositoryImpl
 import com.site.pochak.app.core.data.repository.FollowRepository
 import com.site.pochak.app.core.data.repository.FollowRepositoryImpl
 import com.site.pochak.app.core.data.repository.LikeRepository
@@ -46,6 +48,11 @@ abstract class DataModule {
     abstract fun bindCommentRepository(
         commentRepositoryImpl: CommentRepositoryImpl
     ): CommentRepository
+
+    @Binds
+    abstract fun bindFcmRepository(
+        fcmRepositoryImpl: FcmRepositoryImpl
+    ): FcmRepository
 
     @Binds
     abstract fun bindFollowRepository(
