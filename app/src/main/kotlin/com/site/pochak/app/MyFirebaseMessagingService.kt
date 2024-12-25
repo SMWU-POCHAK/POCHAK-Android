@@ -7,6 +7,11 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 
 import android.app.NotificationManager
+import android.graphics.Bitmap
+import android.graphics.drawable.BitmapDrawable
+import coil.ImageLoader
+import coil.request.ImageRequest
+import coil.request.SuccessResult
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.site.pochak.app.core.datastore.TokenManager
@@ -29,7 +34,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
     override fun onCreate() {
         super.onCreate()
-
+        createNotificationChannel()
         Log.d(TAG, "MyFirebaseMessagingService created")
     }
 
@@ -44,14 +49,37 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         super.onMessageReceived(remoteMessage)
 
-        if (remoteMessage.data.isNotEmpty()) {
-            sendNotification(remoteMessage)
+        Log.d(TAG, "data: ${remoteMessage.data}")
+        Log.d(TAG, "notification: ${remoteMessage.notification}")
+
+        sendNotification(remoteMessage)
+
+    }
+
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channelName = "ChannelName"
+            val channelDescription = "ChannelDescription"
+            val importance = NotificationManager.IMPORTANCE_HIGH
+
+            val notificationChannel = NotificationChannel(
+                CHANNEL_ID, channelName, importance
+            ).apply {
+                description = channelDescription
+            }
+
+            val notificationManager =
+                getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(notificationChannel)
+
+            Log.d(TAG, "Notification Channel Created: $channelName")
         }
     }
 
     private fun sendNotification(remoteMessage: RemoteMessage) {
         val title = remoteMessage.notification?.title ?: "Default Title"
         val message = remoteMessage.notification?.body ?: "Default Message"
+        val imageUrl = remoteMessage.notification?.imageUrl
 
         val notificationManager =
             getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -68,15 +96,48 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             notificationManager.createNotificationChannel(notificationChannel)
         }
 
-        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.mipmap.ic_launcher)
-            .setContentTitle(title)
-            .setContentText(message)
-            .setAutoCancel(true)
-            .build()
+        CoroutineScope(Dispatchers.IO).launch {
+            val bitmap = imageUrl?.let { getBitmapFromCoil(it.toString()) }
+            val notificationBuilder =
+                NotificationCompat.Builder(this@MyFirebaseMessagingService, CHANNEL_ID)
+                    .setSmallIcon(R.drawable.ic_logo)
+                    .setContentTitle(title)
+                    .setContentText(message)
+                    .setAutoCancel(true)
 
-        notificationManager.notify(0, notification)
+            // 확장 전 알림에 표시될 largeIcon 설정
+            bitmap?.let {
+                notificationBuilder.setLargeIcon(it) // 대형 아이콘 설정
+                val style = NotificationCompat.BigPictureStyle()
+                    .bigPicture(it)
+                    .bigLargeIcon(null as Bitmap?) // 확장된 상태에서는 largeIcon 숨김
+                notificationBuilder.setStyle(style)
+            }
+
+            notificationManager.notify(
+                System.currentTimeMillis().toInt(),
+                notificationBuilder.build()
+            )
+        }
     }
+
+    private suspend fun getBitmapFromCoil(imageUrl: String): Bitmap? {
+        return try {
+            val loader = ImageLoader(this)
+            val request = ImageRequest.Builder(this)
+                .data(imageUrl)
+                .allowHardware(false)
+                .build()
+            val result = (loader.execute(request) as? SuccessResult)?.drawable
+            (result as? BitmapDrawable)?.bitmap
+        } catch (e: Exception) {
+            Log.e(TAG, "Error downloading image with Coil", e)
+            null
+        }
+    }
+
+
+
 
     companion object {
         private const val TAG = "MyFirebaseMsgService"
