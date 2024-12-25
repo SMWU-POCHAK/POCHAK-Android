@@ -73,32 +73,26 @@ internal fun CameraScreen(
 ) {
     val context = LocalContext.current
     var permissionGranted by remember { mutableStateOf(false) }
+    var permissionChecked by remember { mutableStateOf(false) }
     var cameraControl by remember { mutableStateOf<CameraControl?>(null) }
     var zoomState by remember { mutableStateOf<Float?>(null) }
     var imageCapture by remember { mutableStateOf<ImageCapture?>(null) }
-    var flashOn by remember { mutableStateOf(false) }
+    var flashOn by remember { mutableStateOf<Boolean>(false) }
     var selectedZoom by remember { mutableStateOf<Float?>(null) }
     var isAnimating by remember { mutableStateOf(false) }
 
-    // 권한 요청
-    val launcher = rememberLauncherForActivityResult(
+    // 권한 요청 결과를 처리하는 Activity Result Launcher
+    val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
         onResult = { isGranted ->
             permissionGranted = isGranted
+            permissionChecked = true
             if (isGranted) {
-                zoomState = 1f // 기본 줌 설정
+                zoomState = 1f // 줌 초기화
             }
         }
     )
 
-    LaunchedEffect(Unit) {
-        // 권한 확인 및 요청
-        if (!permissionGranted) {
-            launcher.launch(Manifest.permission.CAMERA)
-        }
-    }
-
-    // 카메라 초기화 및 종료 처리
     DisposableEffect(Unit) {
         onDispose {
             cameraControl?.cancelFocusAndMetering() // 카메라 동작 중지
@@ -108,7 +102,36 @@ internal fun CameraScreen(
         }
     }
 
-    if (permissionGranted) {
+    // Zoom 애니메이션 처리
+    LaunchedEffect(selectedZoom) {
+        selectedZoom?.let { targetZoom ->
+            zoomState?.let { currentZoom ->
+                animateZoom(cameraControl, currentZoom, targetZoom) { updatedZoom ->
+                    zoomState = updatedZoom
+                }
+                isAnimating = false // 애니메이션 종료
+            }
+        }
+    }
+    
+    // 초기 권한 상태 확인
+    LaunchedEffect(Unit) {
+        if (!permissionChecked) {
+            permissionGranted = ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.CAMERA
+            ) == PackageManager.PERMISSION_GRANTED
+
+            if (!permissionGranted) {
+                permissionLauncher.launch(Manifest.permission.CAMERA)
+            } else {
+                permissionChecked = true
+                zoomState = 1f // 권한이 이미 허용된 경우 줌 초기화
+            }
+        }
+    }
+
+    if (permissionChecked && permissionGranted) {
         Column(
             modifier = modifier
                 .fillMaxSize()
@@ -123,6 +146,7 @@ internal fun CameraScreen(
                     .padding(horizontal = HorizontalPadding)
                     .aspectRatio(3f / 4f)
             ) {
+                // 카메라 미리보기 AndroidView
                 AndroidView(
                     modifier = Modifier.fillMaxSize(),
                     factory = { ctx ->
@@ -130,29 +154,32 @@ internal fun CameraScreen(
                             layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
                         }
 
+                        // ScaleGestureDetector 생성
                         val scaleGestureDetector = ScaleGestureDetector(ctx, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
                             override fun onScale(detector: ScaleGestureDetector): Boolean {
-                                zoomState?.let { currentZoomRatio ->
+                                zoomState.let { currentZoomRatio ->
                                     val delta = detector.scaleFactor
                                     val newZoomRatio =
-                                        (currentZoomRatio * delta).coerceIn(0.5f, 6f)
-                                    newZoomRatio.let { cameraControl?.setZoomRatio(it) }
+                                        (currentZoomRatio?.times(delta))?.coerceIn(0.5f, 6f)
+                                    newZoomRatio?.let { cameraControl?.setZoomRatio(it) }
                                     zoomState = newZoomRatio
                                 }
                                 return true
                             }
                         })
 
-                        previewView.setOnTouchListener { _, event ->
+                        // 터치 이벤트 처리
+                        previewView.setOnTouchListener { view, event ->
                             scaleGestureDetector.onTouchEvent(event)
                             if (event.action == MotionEvent.ACTION_UP) {
-                                previewView.performClick()
+                                view.performClick()
                             }
                             true
                         }
 
-                        setCamera(previewView) { cameraControlInstance, _, imageCaptureInstance ->
+                        setCamera(previewView) { cameraControlInstance, initialZoomRatio, imageCaptureInstance ->
                             cameraControl = cameraControlInstance
+                            zoomState = 1f
                             imageCapture = imageCaptureInstance
                         }
 
@@ -161,12 +188,16 @@ internal fun CameraScreen(
                 )
 
                 zoomState?.let {
+                    Log.d(TAG, "Current Zoom ratio: $it")
                     CameraZoomOverlay(
                         currentZoom = it,
                         onZoomSelected = { selectedZoomRatio ->
-                            selectedZoom = selectedZoomRatio
+                            Log.d(TAG, "Selected Zoom ratio: $selectedZoomRatio")
+                            selectedZoom = selectedZoomRatio // 선택된 줌 배율 업데이트
                         },
-                        onZoomStart = { isAnimating = true },
+                        onZoomStart = {
+                            isAnimating = true // 애니메이션 시작
+                        },
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
                             .padding(bottom = 8.dp),
@@ -183,10 +214,12 @@ internal fun CameraScreen(
                         navigateToUpload()
                     }
                 },
-                onToggleFlash = { flashOn = !flashOn }
+                onToggleFlash = {
+                    flashOn = !flashOn
+                }
             )
         }
-    } else {
+    } else if (permissionChecked && !permissionGranted) {
         PermissionRequiredUI(modifier = modifier)
     }
 }
