@@ -20,4 +20,8 @@ object PochakIcons {
     val HeartFilled = R.drawable.ic_heart_filled
     val Comment = R.drawable.ic_comment
     val CommentFilled = R.drawable.ic_comment_filled
+    val ArrowRight = R.drawable.ic_arrow_right
+    val Report = R.drawable.ic_report
+    val DeleteBin = R.drawable.ic_delete_bin
+    val Cancel = R.drawable.ic_cancel
 }
