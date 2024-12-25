@@ -28,6 +28,8 @@ import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.LifecycleOwner
 import android.view.ScaleGestureDetector
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.compose.foundation.background
@@ -71,14 +73,32 @@ internal fun CameraScreen(
 ) {
     val context = LocalContext.current
     var permissionGranted by remember { mutableStateOf(false) }
-    var permissionChecked by remember { mutableStateOf(false) }
     var cameraControl by remember { mutableStateOf<CameraControl?>(null) }
     var zoomState by remember { mutableStateOf<Float?>(null) }
     var imageCapture by remember { mutableStateOf<ImageCapture?>(null) }
-    var flashOn by remember { mutableStateOf<Boolean>(false) }
+    var flashOn by remember { mutableStateOf(false) }
     var selectedZoom by remember { mutableStateOf<Float?>(null) }
     var isAnimating by remember { mutableStateOf(false) }
 
+    // 권한 요청
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+        onResult = { isGranted ->
+            permissionGranted = isGranted
+            if (isGranted) {
+                zoomState = 1f // 기본 줌 설정
+            }
+        }
+    )
+
+    LaunchedEffect(Unit) {
+        // 권한 확인 및 요청
+        if (!permissionGranted) {
+            launcher.launch(Manifest.permission.CAMERA)
+        }
+    }
+
+    // 카메라 초기화 및 종료 처리
     DisposableEffect(Unit) {
         onDispose {
             cameraControl?.cancelFocusAndMetering() // 카메라 동작 중지
@@ -88,129 +108,87 @@ internal fun CameraScreen(
         }
     }
 
-    // Zoom 애니메이션 처리
-    LaunchedEffect(selectedZoom) {
-        selectedZoom?.let { targetZoom ->
-            zoomState?.let { currentZoom ->
-                animateZoom(cameraControl, currentZoom, targetZoom) { updatedZoom ->
-                    zoomState = updatedZoom
-                }
-                isAnimating = false // 애니메이션 종료
-            }
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        if (!permissionChecked) {
-            permissionGranted = ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.CAMERA
-            ) == PackageManager.PERMISSION_GRANTED
-
-            if (!permissionGranted) {
-                ActivityCompat.requestPermissions(
-                    context as Activity,
-                    arrayOf(Manifest.permission.CAMERA),
-                    0
-                )
-            }
-            permissionChecked = true
-        }
-        if (permissionGranted) {
-            zoomState = 1f // 기본 줌 배율로 초기화
-        }
-    }
-        if (permissionChecked && permissionGranted) {
-            Column(
+    if (permissionGranted) {
+        Column(
+            modifier = modifier
+                .fillMaxSize()
+                .consumeWindowInsets(WindowInsets.safeDrawing.only(WindowInsetsSides.Top)),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            PochakTopAppBar(
+                centerContent = { Text(text = stringResource(R.string.feature_camera_title)) },
+            )
+            Box(
                 modifier = modifier
-                    .fillMaxSize()
-                    .consumeWindowInsets(WindowInsets.safeDrawing.only(WindowInsetsSides.Top)),
-                horizontalAlignment = Alignment.CenterHorizontally,
+                    .padding(horizontal = HorizontalPadding)
+                    .aspectRatio(3f / 4f)
             ) {
-                PochakTopAppBar(
-                    centerContent = { Text(text = stringResource(R.string.feature_camera_title)) },
-                )
-                Box(
-                    modifier = modifier
-                        .padding(horizontal = HorizontalPadding)
-                        .aspectRatio(3f / 4f)
-                ) {
-                    // 카메라 미리보기 AndroidView
-                    AndroidView(
-                        modifier = Modifier.fillMaxSize(),
-                        factory = { ctx ->
-                            val previewView = PreviewView(ctx).apply {
-                                layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
-                            }
-
-                            // ScaleGestureDetector 생성
-                            val scaleGestureDetector = ScaleGestureDetector(ctx, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
-                                override fun onScale(detector: ScaleGestureDetector): Boolean {
-                                    zoomState.let { currentZoomRatio ->
-                                        val delta = detector.scaleFactor
-                                        val newZoomRatio =
-                                            (currentZoomRatio?.times(delta))?.coerceIn(0.5f, 6f)
-                                        newZoomRatio?.let { cameraControl?.setZoomRatio(it) }
-                                        zoomState = newZoomRatio
-                                    }
-                                    return true
-                                }
-                            })
-
-                            // 터치 이벤트 처리
-                            previewView.setOnTouchListener { view, event ->
-                                scaleGestureDetector.onTouchEvent(event)
-                                if (event.action == MotionEvent.ACTION_UP) {
-                                    view.performClick()
-                                }
-                                true
-                            }
-
-                            setCamera(previewView) { cameraControlInstance, initialZoomRatio, imageCaptureInstance ->
-                                cameraControl = cameraControlInstance
-                                zoomState = 1f
-                                imageCapture = imageCaptureInstance
-                            }
-
-                            previewView
+                AndroidView(
+                    modifier = Modifier.fillMaxSize(),
+                    factory = { ctx ->
+                        val previewView = PreviewView(ctx).apply {
+                            layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
                         }
+
+                        val scaleGestureDetector = ScaleGestureDetector(ctx, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
+                            override fun onScale(detector: ScaleGestureDetector): Boolean {
+                                zoomState?.let { currentZoomRatio ->
+                                    val delta = detector.scaleFactor
+                                    val newZoomRatio =
+                                        (currentZoomRatio * delta).coerceIn(0.5f, 6f)
+                                    newZoomRatio.let { cameraControl?.setZoomRatio(it) }
+                                    zoomState = newZoomRatio
+                                }
+                                return true
+                            }
+                        })
+
+                        previewView.setOnTouchListener { _, event ->
+                            scaleGestureDetector.onTouchEvent(event)
+                            if (event.action == MotionEvent.ACTION_UP) {
+                                previewView.performClick()
+                            }
+                            true
+                        }
+
+                        setCamera(previewView) { cameraControlInstance, _, imageCaptureInstance ->
+                            cameraControl = cameraControlInstance
+                            imageCapture = imageCaptureInstance
+                        }
+
+                        previewView
+                    }
+                )
+
+                zoomState?.let {
+                    CameraZoomOverlay(
+                        currentZoom = it,
+                        onZoomSelected = { selectedZoomRatio ->
+                            selectedZoom = selectedZoomRatio
+                        },
+                        onZoomStart = { isAnimating = true },
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(bottom = 8.dp),
+                        isAnimating = isAnimating
                     )
-
-                    zoomState?.let {
-                        Log.d(TAG, "Current Zoom ratio: $it")
-                        CameraZoomOverlay(
-                            currentZoom = it,
-                            onZoomSelected = { selectedZoomRatio ->
-                                Log.d(TAG, "Selected Zoom ratio: $selectedZoomRatio")
-                                selectedZoom = selectedZoomRatio // 선택된 줌 배율 업데이트
-                            },
-                            onZoomStart = {
-                                isAnimating = true // 애니메이션 시작
-                            },
-                            modifier = Modifier
-                                .align(Alignment.BottomCenter)
-                                .padding(bottom = 8.dp),
-                            isAnimating = isAnimating
-                        )
-                    }
                 }
-
-                CaptureControls(
-                    modifier = modifier,
-                    flashOn = flashOn,
-                    onCapture = {
-                        takePhoto(context as Activity, imageCapture, flashOn) {
-                            navigateToUpload()
-                        }
-                    },
-                    onToggleFlash = {
-                        flashOn = !flashOn
-                    }
-                )
             }
-        } else if (permissionChecked && !permissionGranted) {
-            PermissionRequiredUI(modifier = modifier)
+
+            CaptureControls(
+                modifier = modifier,
+                flashOn = flashOn,
+                onCapture = {
+                    takePhoto(context as Activity, imageCapture, flashOn) {
+                        navigateToUpload()
+                    }
+                },
+                onToggleFlash = { flashOn = !flashOn }
+            )
         }
+    } else {
+        PermissionRequiredUI(modifier = modifier)
+    }
 }
 
 @Composable
