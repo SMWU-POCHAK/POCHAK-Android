@@ -58,9 +58,9 @@ fun PochakNavHost(
         )
         loginScreen(
             navigateToHome = {
-            // Login 성공 시 LoginRoute를 pop하고 HomeRoute로 이동한다.
-            appState.navigateToTopLevelDestination(HOME, inclusive = true)
-            navController.graph.setStartDestination(HomeRoute)
+                // Login 성공 시 LoginRoute를 pop하고 HomeRoute로 이동한다.
+                appState.navigateToTopLevelDestination(HOME, inclusive = true)
+                navController.graph.setStartDestination(HomeRoute)
             },
             navigateToSignUp = navController::navigateToProfileSetting,
         )
@@ -68,7 +68,9 @@ fun PochakNavHost(
             navigateToPostDetail = navController::navigateToPostDetail
         )
         postScreen()
-        postDetailScreen()
+        postDetailScreen(
+            onBack = { navController.popBackStack() }
+        )
         cameraScreen(
             navigateToUpload = navController::navigateToUpload
         )

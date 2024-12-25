@@ -1,7 +1,6 @@
 package com.site.pochak.app.feature.post.detail
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,12 +24,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -43,25 +42,25 @@ import com.site.pochak.app.core.designsystem.component.MoreButton
 import com.site.pochak.app.core.designsystem.component.PochakAlertDialog
 import com.site.pochak.app.core.designsystem.component.PochakTextStyle
 import com.site.pochak.app.core.designsystem.component.PochakTopAppBar
+import com.site.pochak.app.core.designsystem.component.noRippleClickable
 import com.site.pochak.app.core.designsystem.icon.PochakIcons
 import com.site.pochak.app.core.designsystem.theme.Gray01
 import com.site.pochak.app.core.designsystem.theme.Gray05
-import com.site.pochak.app.core.designsystem.theme.PochakTheme
 import com.site.pochak.app.core.network.model.NetworkComment
 import com.site.pochak.app.core.network.model.NetworkPostDetail
-import com.site.pochak.app.core.network.model.NetworkTag
-import com.site.pochak.app.core.ui.MemberItemInPost
+import com.site.pochak.app.feature.post.detail.PostDetailBottomSheetState.*
 
 @Composable
 fun PostDetailRoute(
     modifier: Modifier = Modifier,
     viewModel: PostDetailViewModel = hiltViewModel(),
+    onBack: () -> Unit,
 ) {
     val postDetailUiState by viewModel.postDetailUiState.collectAsStateWithLifecycle()
 
     PostDetailScreen(
         modifier = modifier,
-        onBack = { },
+        onBack = onBack,
         uiState = postDetailUiState,
     )
 }
@@ -107,7 +106,6 @@ private fun PostDetailContent(
     onBack: () -> Unit,
     postDetail: NetworkPostDetail,
 ) {
-
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -126,23 +124,11 @@ private fun PostDetailContent(
             }
         )
 
-        MemberItemInPost(
-            modifier = Modifier.padding(horizontal = HorizontalPadding, vertical = 8.dp),
-            imageUrl = postDetail.ownerProfileImage,
-            tagList = postDetail.tagList.map { it.handle },
-            handle = postDetail.ownerHandle,
-            onClickItem = { },
-        ) {
-            // 자신의 게시물이 아닐경우, 팔로우/팔로잉 버튼 표시
-            postDetail.isFollow?.let {
-                FollowButton(
-                    isFollow = it,
-                    onClick = { /* 팔로우/팔로잉 버튼 클릭 시 동작 */ }
-                )
-            }
-        }
+        ProfileAndFollowButton(
+            postDetail = postDetail,
+        )
 
-         // 게시물 이미지
+        // 게시물 이미지
         AsyncImage(
             model = postDetail.postImage,
             contentDescription = "Post Image",
@@ -155,14 +141,66 @@ private fun PostDetailContent(
         CaptionAndIcons(
             postDetail = postDetail,
             onClickLike = {},
-            onClickComment = {  }
+            onClickComment = { }
         )
 
         // 최근 댓글
         postDetail.recentComment?.let {
             RecentComment(
                 recentComment = it,
-                onClickComment = {  }
+                onClickComment = { }
+            )
+        }
+    }
+}
+
+@Composable
+private fun ProfileAndFollowButton(
+    modifier: Modifier = Modifier,
+    postDetail: NetworkPostDetail,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = HorizontalPadding, vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            CircleCropAsyncImage(
+                modifier = Modifier.size(50.dp),
+                imageUrl = postDetail.ownerProfileImage,
+                contentDescription = "profile image",
+                onClick = { /* owner 프로필로 이동 */ },
+            )
+
+            Column(
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                // 태그 최대 2개 표시, 3개 이상일 경우 "태그1 · 태그2 · ..." 형태로 표시
+                val maxTagCount = 2
+                Text(
+                    text = postDetail.tagList.map { it.handle }.take(maxTagCount)
+                        .joinToString(" · ") { it + "님" } + if (postDetail.tagList.size > maxTagCount) "..." else "",
+                    style = PochakTextStyle.body1,
+                    modifier = Modifier.noRippleClickable { /* 태그 모달 열기 */ }
+                )
+
+                Text(
+                    text = postDetail.ownerHandle + "님이 포착",
+                    style = PochakTextStyle.body4,
+                    modifier = Modifier.noRippleClickable { /* owner 프로필로 이동 */ }
+                )
+            }
+        }
+
+        postDetail.isFollow?.let {
+            FollowButton(
+                isFollow = it,
+                onClick = { /* 팔로우/팔로잉 버튼 클릭 시 동작 */ }
             )
         }
     }

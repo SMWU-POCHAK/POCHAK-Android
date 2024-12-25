@@ -17,8 +17,11 @@ fun NavController.navigateToPostDetail(
 ) = navigate(PostDetailRoute(postId), navOptions)
 
 fun NavGraphBuilder.postDetailScreen(
+    onBack: () -> Unit,
 ) {
     composable<PostDetailRoute> {
-        PostDetailRoute()
+        PostDetailRoute(
+            onBack = onBack,
+        )
     }
 }
