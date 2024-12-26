@@ -9,4 +9,7 @@ android {
 
 dependencies {
     implementation(projects.core.data)
+    implementation(project(":core:domain"))
+    implementation(libs.androidx.runtime.livedata)
+    implementation(libs.coil.kt.compose)
 }
