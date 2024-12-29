@@ -4,6 +4,7 @@ import com.site.pochak.app.core.network.BuildConfig
 import com.site.pochak.app.core.network.service.AlarmService
 import com.site.pochak.app.core.network.service.BlockService
 import com.site.pochak.app.core.network.service.CommentService
+import com.site.pochak.app.core.network.service.FcmService
 import com.site.pochak.app.core.network.service.FollowService
 import com.site.pochak.app.core.network.service.LikeService
 import com.site.pochak.app.core.network.service.LoginService
@@ -77,6 +78,11 @@ internal object NetworkModule {
     @Singleton
     fun providesCommentService(retrofit: Retrofit): CommentService =
         retrofit.create(CommentService::class.java)
+
+    @Provides
+    @Singleton
+    fun providesFcmService(retrofit: Retrofit): FcmService =
+        retrofit.create(FcmService::class.java)
 
     @Provides
     @Singleton

@@ -3,6 +3,7 @@ package com.site.pochak.app.core.datastore
 
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.flow.Flow
@@ -16,6 +17,7 @@ class TokenManager @Inject constructor(
         private val ACCESS_TOKEN_KEY = stringPreferencesKey("access_token")
         private val REFRESH_TOKEN_KEY = stringPreferencesKey("refresh_token")
         private val USER_HANDLE_KEY = stringPreferencesKey("user_handle")
+        private val TOKEN_SENT_KEY = booleanPreferencesKey("fcm_token_sent") // FCM 토큰 전송 여부
     }
 
     fun getAccessToken(): Flow<String?> {
@@ -77,6 +79,31 @@ class TokenManager @Inject constructor(
             it[ACCESS_TOKEN_KEY] = accessToken
             it[REFRESH_TOKEN_KEY] = refreshToken
             it[USER_HANDLE_KEY] = userHandle
+        }
+    }
+
+    // FCM 토큰 전송 여부 관련 메서드
+    fun isFcmTokenSent(): Flow<Boolean> {
+        return dataStore.data.map {
+            it[TOKEN_SENT_KEY] ?: false
+        }
+    }
+
+    suspend fun setFcmTokenSent(sent: Boolean) {
+        dataStore.edit {
+            it[TOKEN_SENT_KEY] = sent
+        }
+    }
+
+    fun getFcmTokenSent(): Flow<Boolean> {
+        return dataStore.data.map {
+            it[TOKEN_SENT_KEY] ?: false
+        }
+    }
+
+    suspend fun resetFcmTokenSent() {
+        dataStore.edit {
+            it.remove(TOKEN_SENT_KEY)
         }
     }
 }

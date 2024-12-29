@@ -9,4 +9,6 @@ android {
 
 dependencies {
     implementation(projects.core.data)
+    implementation(libs.firebase.messaging.ktx)
+    implementation(libs.androidx.runtime.livedata)
 }
