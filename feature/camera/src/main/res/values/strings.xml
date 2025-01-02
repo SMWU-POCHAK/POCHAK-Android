@@ -1,9 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="feature_camera_title">카메라</string>
-    <string name="feature_camera_upload">업로드</string>
+    <string name="feature_camera_title">포착하기</string>
+    <string name="feature_camera_upload">누구를 포착했나요?</string>
+    <string name="feature_camera_upload_button">업로드</string>
     <string name="feature_camera_input_caption">내용 입력하기</string>
     <string name="feature_camera_tag">태그하기</string>
     <string name="feature_camera_tag_friend">태그할 친구를 입력하세요.</string>
+    <string name="feature_camera_tag_cancel">취소</string>
     <string name="feature_camera_permission_camera">카메라 권한이 필요합니다.\n설정에서 권한을 허용해주세요.</string>
+    <string name="feature_camera_back_title">입력을 취소하고\n페이지를 나갈까요?</string>
+    <string name="feature_camera_back_message">페이지를 벗어나면 현재 입력된 내용은\n저장되지 않으며, 모두 사라집니다.</string>
+    <string name="feature_camera_back_cancel">나가기</string>
+    <string name="feature_camera_back_confirm">계속하기</string>
+    <string name="feature_camera_tag_dialog_title">태그는 최대 5명까지 가능해요.</string>
+    <string name="feature_camera_dialog_confirm">확인</string>
+    <string name="feature_camera_upload_fail_title">업로드 실패</string>
+    <string name="feature_camera_upload_fail_message">업로드에 실패했습니다.\n다시 시도해주세요.</string>
 </resources>

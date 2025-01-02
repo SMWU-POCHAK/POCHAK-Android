@@ -5,7 +5,7 @@ import androidx.annotation.StringRes
 import com.site.pochak.app.core.designsystem.icon.PochakIcons
 import com.site.pochak.app.feature.alarm.navigation.AlarmRoute
 import com.site.pochak.app.feature.camera.navigation.CameraRoute
-import com.site.pochak.app.feature.camera.navigation.PostRoute
+import com.site.pochak.app.feature.post.navigation.PostRoute
 import com.site.pochak.app.feature.home.navigation.HomeRoute
 import com.site.pochak.app.feature.profile.navigation.ProfileRoute
 import kotlin.reflect.KClass

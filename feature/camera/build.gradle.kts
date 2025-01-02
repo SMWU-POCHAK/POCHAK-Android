@@ -16,4 +16,7 @@ dependencies {
     implementation(libs.androidx.camera.camera2)
     implementation(libs.androidx.exifinterface)
     implementation(libs.accompanist.flowlayout)
+
+    implementation(libs.coil.kt.compose)
+    implementation(project(":core:domain"))
 }

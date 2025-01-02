@@ -25,4 +25,6 @@ object PochakIcons {
     val DeleteBin = R.drawable.ic_delete_bin
     val Cancel = R.drawable.ic_cancel
     val ChatEmpty = R.drawable.ic_chat_no
+    val DeleteGray06 = R.drawable.ic_delete_gray06
+    val DeleteGray04 = R.drawable.ic_delete_gray04
 }

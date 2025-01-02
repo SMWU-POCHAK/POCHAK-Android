@@ -9,7 +9,7 @@ import androidx.navigation.navOptions
 import com.site.pochak.app.feature.alarm.navigation.alarmScreen
 import com.site.pochak.app.feature.camera.navigation.cameraScreen
 import com.site.pochak.app.feature.camera.navigation.navigateToUpload
-import com.site.pochak.app.feature.camera.navigation.postScreen
+import com.site.pochak.app.feature.post.navigation.postScreen
 import com.site.pochak.app.feature.camera.navigation.uploadScreen
 import com.site.pochak.app.feature.home.navigation.HomeRoute
 import com.site.pochak.app.feature.home.navigation.homeScreen
@@ -18,6 +18,8 @@ import com.site.pochak.app.feature.login.navigation.loginScreen
 import com.site.pochak.app.feature.login.navigation.navigateToLogin
 import com.site.pochak.app.feature.post.detail.navigation.navigateToPostDetail
 import com.site.pochak.app.feature.post.detail.navigation.postDetailScreen
+import com.site.pochak.app.feature.post.navigation.navigateToSearchHistory
+import com.site.pochak.app.feature.post.navigation.searchHistoryScreen
 import com.site.pochak.app.feature.profile.navigation.profileScreen
 import com.site.pochak.app.feature.profile.setting.navigation.navigateToProfileSetting
 import com.site.pochak.app.feature.profile.setting.navigation.profileSettingScreen
@@ -67,7 +69,10 @@ fun PochakNavHost(
         homeScreen(
             navigateToPostDetail = navController::navigateToPostDetail
         )
-        postScreen()
+        postScreen(
+            navigateToSearchHistory = navController::navigateToSearchHistory
+        )
+        searchHistoryScreen()
         postDetailScreen(
             onBack = { navController.popBackStack() }
         )
@@ -77,6 +82,7 @@ fun PochakNavHost(
         uploadScreen(
             navigateToHome = {
                 appState.navigateToTopLevelDestination(HOME, inclusive = true)
+                navController.navigate(HomeRoute)
             },
             onBackClick = {
                 navController.popBackStack()

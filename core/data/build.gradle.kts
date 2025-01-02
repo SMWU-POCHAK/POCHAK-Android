@@ -11,6 +11,6 @@ dependencies {
     api(projects.core.common)
     api(projects.core.database)
     api(projects.core.network)
-
     implementation(libs.okhttp.logging)
+    implementation(libs.hilt.android)
 }

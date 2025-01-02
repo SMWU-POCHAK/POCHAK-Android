@@ -27,14 +27,18 @@ class PostRepositoryImpl @Inject constructor(
     ): ApiResult {
         val multipartBody = fileToMultiPartBody(postImage, "PostImage")
 
+        val joinedTaggedMembers = taggedMemberHandleList.joinToString(",")
+
         return ApiResultHandler.handleResult {
             postService.postPost(
                 postImage = multipartBody,
-                taggedMemberHandleList = taggedMemberHandleList,
+                taggedMemberHandleList = joinedTaggedMembers,
                 caption = caption
             )
         }
     }
+
+
 
     override suspend fun getPostDetail(postId: Int) =
         ApiResultHandler.handleResult {
