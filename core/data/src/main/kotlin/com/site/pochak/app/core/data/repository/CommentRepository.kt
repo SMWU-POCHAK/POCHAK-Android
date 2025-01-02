@@ -5,7 +5,7 @@ import com.site.pochak.app.core.network.model.NetworkCommentWithChild
 import com.site.pochak.app.core.network.utils.ApiResult
 
 interface CommentRepository {
-    suspend fun uploadComment(postId: Int): ApiResult
+    suspend fun uploadComment(postId: Int, comment: String, parentCommentId: Int?): ApiResult
 
     /**
      * @return: [CommentPageResponse]

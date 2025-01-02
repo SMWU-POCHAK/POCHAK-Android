@@ -1,5 +1,6 @@
 package com.site.pochak.app.core.data.repository
 
+import com.site.pochak.app.core.network.model.NetworkCommentBody
 import com.site.pochak.app.core.network.service.CommentService
 import com.site.pochak.app.core.network.utils.ApiResultHandler
 import javax.inject.Inject
@@ -7,9 +8,9 @@ import javax.inject.Inject
 class CommentRepositoryImpl @Inject constructor(
     private val commentService: CommentService
 ) : CommentRepository {
-    override suspend fun uploadComment(postId: Int) =
+    override suspend fun uploadComment(postId: Int, comment: String, parentCommentId: Int?) =
         ApiResultHandler.handleResult {
-            commentService.uploadComment(postId)
+            commentService.uploadComment(postId, NetworkCommentBody(comment, parentCommentId))
         }
 
     override suspend fun getComments(postId: Int, page: Int) =

@@ -1,6 +1,8 @@
 package com.site.pochak.app.core.network.service
 
+import com.site.pochak.app.core.network.model.NetworkReportBody
 import com.site.pochak.app.core.network.model.NetworkResponse
+import retrofit2.http.Body
 import retrofit2.http.POST
 import retrofit2.http.Query
 
@@ -12,10 +14,9 @@ import retrofit2.http.Query
  */
 interface ReportService {
 
-    @POST(value = "api/v2/reports")
+    @POST(value = "api/v1/reports")
     suspend fun postReport(
-        @Query(value = "postId") postId: Int,
-        @Query(value = "reportType") reportType: String
+        @Body reportBody: NetworkReportBody
     ): NetworkResponse<Unit>
 
 }

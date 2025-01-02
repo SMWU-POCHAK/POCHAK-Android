@@ -9,6 +9,7 @@ import retrofit2.http.GET
 import retrofit2.http.Multipart
 import retrofit2.http.POST
 import retrofit2.http.Part
+import retrofit2.http.Path
 import retrofit2.http.Query
 
 /**
@@ -44,12 +45,12 @@ interface PostService {
 
     @GET(value = "api/v2/posts/{postId}")
     suspend fun getPostDetail(
-        @Query(value = "postId") postId: Int
+        @Path(value = "postId") postId: Int
     ): NetworkResponse<NetworkPostDetail>
 
     @DELETE(value = "api/v2/posts/{postId}")
     suspend fun deletePost(
-        @Query(value = "postId") postId: Int
+        @Path(value = "postId") postId: Int
     ): NetworkResponse<Unit>
 
 }

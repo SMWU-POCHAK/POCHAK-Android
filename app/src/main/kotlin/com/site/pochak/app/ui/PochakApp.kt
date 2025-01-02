@@ -36,9 +36,9 @@ fun PochakApp(
 
     Scaffold(
         modifier = modifier
-            .fillMaxSize()
+            .fillMaxSize(),
             // 키보드 올라올 때, 키보드 높이만큼 padding을 줌
-            .imePadding(),
+//            .imePadding(),
         bottomBar = {
             if (shouldShowNavigationBar) {
                 PochakNavigationBar {

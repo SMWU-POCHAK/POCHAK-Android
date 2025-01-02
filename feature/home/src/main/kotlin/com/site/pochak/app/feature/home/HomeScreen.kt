@@ -52,6 +52,7 @@ private const val TAG = "HomeScreen"
 @Composable
 internal fun HomeRoute(
     modifier: Modifier = Modifier,
+    navigateToPostDetail: (Int) -> Unit,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val homePosts = viewModel.homePosts.collectAsStateWithLifecycle()
@@ -65,6 +66,7 @@ internal fun HomeRoute(
         isLoading = isLoading.value,
         isRefreshing = isRefreshing.value,
         onLoadPage = viewModel::loadPage,
+        onPostClick = navigateToPostDetail,
     )
 }
 
@@ -76,6 +78,7 @@ internal fun HomeScreen(
     isLoading: Boolean,
     isRefreshing: Boolean,
     onLoadPage: (Boolean) -> Unit,
+    onPostClick: (Int) -> Unit,
 ) {
     RequestNotificationPermission(
         onPermissionGranted = {
@@ -115,6 +118,7 @@ internal fun HomeScreen(
             isLoading = isLoading,
             isRefreshing = isRefreshing,
             onLoadPage = onLoadPage,
+            onPostClick = onPostClick,
         )
     }
 }
@@ -126,6 +130,7 @@ private fun HomeContent(
     isLoading: Boolean,
     isRefreshing: Boolean,
     onLoadPage: (Boolean) -> Unit,
+    onPostClick: (Int) -> Unit,
 ) {
     // Load the first page when the screen is launched
     LaunchedEffect(Unit) {
@@ -144,6 +149,7 @@ private fun HomeContent(
                 isLoading = isLoading,
                 isRefreshing = isRefreshing,
                 onLoadPage = onLoadPage,
+                onPostClick = onPostClick,
             )
         }
     }
@@ -178,6 +184,7 @@ private fun HomePostContent(
     isLoading: Boolean,
     isRefreshing: Boolean,
     onLoadPage: (Boolean) -> Unit,
+    onPostClick: (Int) -> Unit,
 ) {
     RefreshableLazyVerticalGrid(
         modifier = modifier.fillMaxSize(),
@@ -186,7 +193,10 @@ private fun HomePostContent(
         columns = GridCells.Fixed(3),
         loadMore = onLoadPage,
     ) {
-        postFeed(homePosts)
+        postFeed(
+            postList = homePosts,
+            onItemClick = onPostClick,
+        )
 
         if (isLoading && !isRefreshing) {
             item { }

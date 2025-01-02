@@ -16,6 +16,8 @@ import com.site.pochak.app.feature.home.navigation.homeScreen
 import com.site.pochak.app.feature.login.navigation.LoginRoute
 import com.site.pochak.app.feature.login.navigation.loginScreen
 import com.site.pochak.app.feature.login.navigation.navigateToLogin
+import com.site.pochak.app.feature.post.detail.navigation.navigateToPostDetail
+import com.site.pochak.app.feature.post.detail.navigation.postDetailScreen
 import com.site.pochak.app.feature.post.navigation.navigateToSearchHistory
 import com.site.pochak.app.feature.post.navigation.searchHistoryScreen
 import com.site.pochak.app.feature.profile.navigation.profileScreen
@@ -58,17 +60,22 @@ fun PochakNavHost(
         )
         loginScreen(
             navigateToHome = {
-            // Login 성공 시 LoginRoute를 pop하고 HomeRoute로 이동한다.
-            appState.navigateToTopLevelDestination(HOME, inclusive = true)
-            navController.graph.setStartDestination(HomeRoute)
+                // Login 성공 시 LoginRoute를 pop하고 HomeRoute로 이동한다.
+                appState.navigateToTopLevelDestination(HOME, inclusive = true)
+                navController.graph.setStartDestination(HomeRoute)
             },
             navigateToSignUp = navController::navigateToProfileSetting,
         )
-        homeScreen()
+        homeScreen(
+            navigateToPostDetail = navController::navigateToPostDetail
+        )
         postScreen(
             navigateToSearchHistory = navController::navigateToSearchHistory
         )
         searchHistoryScreen()
+        postDetailScreen(
+            onBack = { navController.popBackStack() }
+        )
         cameraScreen(
             navigateToUpload = navController::navigateToUpload
         )

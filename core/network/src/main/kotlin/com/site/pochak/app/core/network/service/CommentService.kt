@@ -1,8 +1,10 @@
 package com.site.pochak.app.core.network.service
 
 import com.site.pochak.app.core.network.model.CommentPageResponse
+import com.site.pochak.app.core.network.model.NetworkCommentBody
 import com.site.pochak.app.core.network.model.NetworkCommentWithChild
 import com.site.pochak.app.core.network.model.NetworkResponse
+import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
@@ -22,7 +24,8 @@ interface CommentService {
 
     @POST(value = "api/v2/posts/{postId}/comments")
     suspend fun uploadComment(
-        @Path(value = "postId") postId: Int
+        @Path(value = "postId") postId: Int,
+        @Body comment: NetworkCommentBody
     ): NetworkResponse<Unit>
 
     @GET(value = "api/v2/posts/{postId}/comments")

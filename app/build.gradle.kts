@@ -41,6 +41,7 @@ dependencies {
     implementation(projects.feature.profile)
     implementation(projects.feature.profileSetting)
     implementation(projects.feature.splash)
+    implementation(projects.feature.postDetail)
 
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.material3.adaptive)
