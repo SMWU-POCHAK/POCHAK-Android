@@ -20,8 +20,7 @@ class HomeViewModel @Inject constructor(
     private val postRepository: PostRepository,
 ) : ViewModel() {
     private val postPageManager = PageResponseManager<NetworkPost>(
-        // TODO: 커밋 전에 getSearchPosts를 getHomePosts로 변경
-        fetchPage = postRepository::getSearchPosts,
+        fetchPage = postRepository::getHomePosts,
         scope = viewModelScope
     )
 

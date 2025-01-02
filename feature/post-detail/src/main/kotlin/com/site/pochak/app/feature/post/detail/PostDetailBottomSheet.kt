@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ModalBottomSheet
@@ -35,6 +36,7 @@ import com.site.pochak.app.feature.post.detail.PostDetailBottomSheetState.COMMEN
 import com.site.pochak.app.feature.post.detail.PostDetailBottomSheetState.MORE
 import com.site.pochak.app.feature.post.detail.PostDetailBottomSheetState.REPORT
 import com.site.pochak.app.feature.post.detail.PostDetailBottomSheetState.TAG
+import com.site.pochak.app.feature.post.detail.comment.CommentContent
 import kotlinx.coroutines.launch
 
 internal enum class PostDetailBottomSheetState(
@@ -57,7 +59,7 @@ internal fun PostDetailBottomSheetContent(
     onDelete: () -> Unit,
     reportPost: (String) -> Unit,
 ) {
-    val sheetState = rememberModalBottomSheetState()
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
 
     fun hideSheet() {
@@ -71,8 +73,9 @@ internal fun PostDetailBottomSheetContent(
 
     if (state != CLOSED) {
         ModalBottomSheet(
+            modifier = Modifier.statusBarsPadding(),
             onDismissRequest = onDismiss,
-            sheetState = sheetState
+            sheetState = sheetState,
         ) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -163,6 +166,9 @@ internal fun PostDetailBottomSheetContent(
                         }
                     }
 
+                    COMMENT -> {
+                        CommentContent()
+                    }
                     else -> {}
                 }
             }

@@ -24,4 +24,5 @@ object PochakIcons {
     val Report = R.drawable.ic_report
     val DeleteBin = R.drawable.ic_delete_bin
     val Cancel = R.drawable.ic_cancel
+    val ChatEmpty = R.drawable.ic_chat_no
 }
