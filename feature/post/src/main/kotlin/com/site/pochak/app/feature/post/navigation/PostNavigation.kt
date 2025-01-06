@@ -16,10 +16,12 @@ fun NavController.navigateToSearchHistory(navOptions: NavOptions? = null) = navi
 
 fun NavGraphBuilder.postScreen(
     navigateToSearchHistory: () -> Unit,
+    navigateToPostDetail: (Int) -> Unit,
 ) {
     composable<PostRoute> {
         PostRoute(
-            navigateToSearchHistory = navigateToSearchHistory
+            navigateToSearchHistory = navigateToSearchHistory,
+            navigateToPostDetail = navigateToPostDetail,
         )
     }
 }

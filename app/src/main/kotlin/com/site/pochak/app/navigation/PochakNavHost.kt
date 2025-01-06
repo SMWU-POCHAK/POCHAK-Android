@@ -70,7 +70,8 @@ fun PochakNavHost(
             navigateToPostDetail = navController::navigateToPostDetail
         )
         postScreen(
-            navigateToSearchHistory = navController::navigateToSearchHistory
+            navigateToSearchHistory = navController::navigateToSearchHistory,
+            navigateToPostDetail = navController::navigateToPostDetail
         )
         searchHistoryScreen()
         postDetailScreen(
