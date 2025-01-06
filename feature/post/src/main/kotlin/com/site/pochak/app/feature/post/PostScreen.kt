@@ -45,6 +45,7 @@ internal fun PostRoute(
     modifier: Modifier = Modifier,
     viewModel: PostViewModel = hiltViewModel(),
     navigateToSearchHistory: () -> Unit,
+    navigateToPostDetail: (Int) -> Unit,
 ) {
     val postPosts = viewModel.postPosts.collectAsStateWithLifecycle()
     val isLoading = viewModel.isLoading.collectAsStateWithLifecycle()
@@ -57,6 +58,7 @@ internal fun PostRoute(
         isRefreshing = isRefreshing.value,
         onLoadPage = viewModel::loadPage,
         navigateToSearchHistory = navigateToSearchHistory,
+        onPostClick = navigateToPostDetail,
     )
 }
 
@@ -67,7 +69,8 @@ internal fun PostScreen(
     isLoading: Boolean,
     isRefreshing: Boolean,
     onLoadPage: (Boolean) -> Unit,
-    navigateToSearchHistory: () -> Unit
+    navigateToSearchHistory: () -> Unit,
+    onPostClick: (Int) -> Unit,
 ) {
     Column(
         modifier = modifier
@@ -85,6 +88,7 @@ internal fun PostScreen(
             isLoading = isLoading,
             isRefreshing = isRefreshing,
             onLoadPage = onLoadPage,
+            onPostClick = onPostClick,
         )
     }
 }
@@ -134,6 +138,7 @@ private fun PostContent(
     isLoading: Boolean,
     isRefreshing: Boolean,
     onLoadPage: (Boolean) -> Unit,
+    onPostClick: (Int) -> Unit,
 ) {
     // Load the first page when the screen is launched
     LaunchedEffect(Unit) {
@@ -157,6 +162,7 @@ private fun PostContent(
             isLoading = isLoading,
             isRefreshing = isRefreshing,
             onLoadPage = onLoadPage,
+            onPostClick = onPostClick,
         )
     }
 }
@@ -169,6 +175,7 @@ private fun HomePostContent(
     isLoading: Boolean,
     isRefreshing: Boolean,
     onLoadPage: (Boolean) -> Unit,
+    onPostClick: (Int) -> Unit,
 ) {
     RefreshableLazyVerticalGrid(
         modifier = modifier.fillMaxSize(),
@@ -177,7 +184,10 @@ private fun HomePostContent(
         columns = GridCells.Fixed(3),
         loadMore = onLoadPage,
     ) {
-        postFeed(homePosts)
+        postFeed(
+            homePosts,
+            onItemClick = onPostClick,
+        )
 
         if (isLoading && !isRefreshing) {
             item { }
