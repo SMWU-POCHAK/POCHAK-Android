@@ -65,6 +65,7 @@ import com.site.pochak.app.core.network.model.NetworkProfile
 internal fun ProfileRoute(
     modifier: Modifier = Modifier,
     viewModel: ProfileViewModel = hiltViewModel(),
+    navigateToPostDetail: (Int) -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val pochakedPosts = viewModel.pochakedPosts.collectAsLazyPagingItems()
@@ -75,6 +76,7 @@ internal fun ProfileRoute(
         uiState = uiState,
         pochakedPosts = pochakedPosts,
         pochakPosts = pochakPosts,
+        navigateToPostDetail = navigateToPostDetail,
     )
 }
 
@@ -84,6 +86,7 @@ internal fun ProfileScreen(
     uiState: ProfileUiState,
     pochakedPosts: LazyPagingItems<Post>,
     pochakPosts: LazyPagingItems<Post>,
+    navigateToPostDetail: (Int) -> Unit,
 ) {
     Box(
         modifier = modifier.fillMaxSize(),
@@ -101,6 +104,7 @@ internal fun ProfileScreen(
                     profile = profile,
                     pochakedPosts = pochakedPosts,
                     pochakPosts = pochakPosts,
+                    navigateToPostDetail = navigateToPostDetail,
                 )
             }
 
@@ -117,6 +121,7 @@ private fun ProfileContent(
     profile: NetworkProfile,
     pochakedPosts: LazyPagingItems<Post>,
     pochakPosts: LazyPagingItems<Post>,
+    navigateToPostDetail: (Int) -> Unit,
 ) {
     Column(
         modifier = modifier
@@ -150,6 +155,7 @@ private fun ProfileContent(
         ProfileTabContent(
             pochakedPosts = pochakedPosts,
             pochakPosts = pochakPosts,
+            navigateToPostDetail = navigateToPostDetail,
         )
     }
 }
@@ -247,6 +253,7 @@ private fun ProfileTabContent(
     modifier: Modifier = Modifier,
     pochakedPosts: LazyPagingItems<Post>,
     pochakPosts: LazyPagingItems<Post>,
+    navigateToPostDetail: (Int) -> Unit,
 ) {
     var selectedTabIndex by remember { mutableIntStateOf(0) }
 
@@ -302,6 +309,7 @@ private fun ProfileTabContent(
                         PostImage(
                             imageUrl = it.postImage,
                             id = it.postId,
+                            onClick = { navigateToPostDetail(post.postId) }
                         )
                     }
                 }
@@ -313,6 +321,7 @@ private fun ProfileTabContent(
                         PostImage(
                             imageUrl = it.postImage,
                             id = it.postId,
+                            onClick = { navigateToPostDetail(post.postId) }
                         )
                     }
                 }

@@ -16,8 +16,12 @@ fun NavController.navigateToProfile(
     handle: String? = null,
 ) = navigate(ProfileRoute(handle), navOptions)
 
-fun NavGraphBuilder.profileScreen() {
+fun NavGraphBuilder.profileScreen(
+    navigateToPostDetail: (Int) -> Unit,
+) {
     composable<ProfileRoute> {
-        ProfileRoute()
+        ProfileRoute(
+            navigateToPostDetail = navigateToPostDetail,
+        )
     }
 }

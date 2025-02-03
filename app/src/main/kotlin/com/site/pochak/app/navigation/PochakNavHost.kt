@@ -94,7 +94,11 @@ fun PochakNavHost(
             }
         )
         alarmScreen()
-        profileScreen()
+        profileScreen(
+            navigateToPostDetail = { postId ->
+                navController.navigateToPostDetail(postId)
+            },
+        )
         profileSettingScreen(
             navigateToHome = {
                 appState.navigateToTopLevelDestination(HOME, inclusive = true)
