@@ -13,4 +13,7 @@ dependencies {
     api(projects.core.network)
     implementation(libs.okhttp.logging)
     implementation(libs.hilt.android)
+
+    api(libs.androidx.paging.runtime)
+    api(libs.androidx.paging.compose)
 }
