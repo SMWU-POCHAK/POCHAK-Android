@@ -20,6 +20,7 @@ import com.site.pochak.app.feature.post.detail.navigation.navigateToPostDetail
 import com.site.pochak.app.feature.post.detail.navigation.postDetailScreen
 import com.site.pochak.app.feature.post.navigation.navigateToSearchHistory
 import com.site.pochak.app.feature.post.navigation.searchHistoryScreen
+import com.site.pochak.app.feature.profile.navigation.navigateToProfile
 import com.site.pochak.app.feature.profile.navigation.profileScreen
 import com.site.pochak.app.feature.profile.setting.navigation.navigateToProfileSetting
 import com.site.pochak.app.feature.profile.setting.navigation.profileSettingScreen
@@ -75,7 +76,10 @@ fun PochakNavHost(
         )
         searchHistoryScreen()
         postDetailScreen(
-            onBack = { navController.popBackStack() }
+            onBack = { navController.popBackStack() },
+            navigateToProfile = { handle ->
+                navController.navigateToProfile(handle = handle)
+            }
         )
         cameraScreen(
             navigateToUpload = navController::navigateToUpload

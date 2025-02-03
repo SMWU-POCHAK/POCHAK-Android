@@ -7,9 +7,14 @@ import androidx.navigation.compose.composable
 import com.site.pochak.app.feature.profile.ProfileRoute
 import kotlinx.serialization.Serializable
 
-@Serializable data object ProfileRoute
+@Serializable data class ProfileRoute(
+    val handle: String?
+)
 
-fun NavController.navigateToProfile(navOptions: NavOptions? = null) = navigate(ProfileRoute, navOptions)
+fun NavController.navigateToProfile(
+    navOptions: NavOptions? = null,
+    handle: String? = null,
+) = navigate(ProfileRoute(handle), navOptions)
 
 fun NavGraphBuilder.profileScreen() {
     composable<ProfileRoute> {
