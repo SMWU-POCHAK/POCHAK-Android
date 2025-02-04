@@ -1,13 +1,18 @@
 package com.site.pochak.app.feature.profile
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import androidx.paging.PagingData
+import androidx.paging.cachedIn
 import androidx.paging.map
 import com.site.pochak.app.core.data.repository.ProfileRepository
 import com.site.pochak.app.core.datastore.TokenManager
+import com.site.pochak.app.core.domain.FollowUseCase
 import com.site.pochak.app.core.model.data.Post
 import com.site.pochak.app.core.network.model.NetworkPost
 import com.site.pochak.app.core.network.model.NetworkProfile
@@ -15,20 +20,21 @@ import com.site.pochak.app.core.network.model.toModel
 import com.site.pochak.app.core.network.utils.ApiResult
 import com.site.pochak.app.feature.profile.navigation.ProfileRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
     saveStateHandle: SavedStateHandle,
     tokenManager: TokenManager,
-    private val profileRepository: ProfileRepository
+    private val profileRepository: ProfileRepository,
+    private val followUseCase: FollowUseCase,
 ) : ViewModel() {
     private val handleKey = "handle"
 
@@ -40,6 +46,9 @@ class ProfileViewModel @Inject constructor(
         it ?: tokenManager.getUserHandle().first()
     }
 
+    var isFollow by mutableStateOf<Boolean?>(null)
+        private set
+
     val uiState: StateFlow<ProfileUiState> = handle.map { handle ->
         if (handle == null) {
             ProfileUiState.Error("Handle is null")
@@ -48,8 +57,11 @@ class ProfileViewModel @Inject constructor(
                 is ApiResult.Success<*> -> {
                     val result = apiResult.result as NetworkProfile
 
+                    isFollow = result.isFollow
+
                     ProfileUiState.Success(result)
                 }
+
                 else -> ProfileUiState.Error("ApiResult is not Success")
             }
         }
@@ -67,6 +79,7 @@ class ProfileViewModel @Inject constructor(
             }
         } ?: throw IllegalStateException("Handle is null")
     }
+        .cachedIn(viewModelScope)
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(),
@@ -80,11 +93,29 @@ class ProfileViewModel @Inject constructor(
             }
         } ?: throw IllegalStateException("Handle is null")
     }
+        .cachedIn(viewModelScope)
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(),
             initialValue = PagingData.empty()
         )
+
+    fun followMember() {
+        isFollow?.let { isFollowNotNull ->
+            viewModelScope.launch {
+                val uiState = uiState.first()
+
+                if (uiState is ProfileUiState.Success) {
+                    followUseCase(uiState.profile.handle)
+                        .collect {
+                            if (it) {
+                                isFollow = !isFollowNotNull
+                            }
+                        }
+                }
+            }
+        }
+    }
 }
 
 sealed interface ProfileUiState {

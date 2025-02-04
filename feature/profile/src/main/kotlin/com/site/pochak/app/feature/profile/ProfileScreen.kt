@@ -11,20 +11,15 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -37,10 +32,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -51,11 +47,13 @@ import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.site.pochak.app.core.designsystem.component.CircleCropAsyncImage
+import com.site.pochak.app.core.designsystem.component.FollowButton
 import com.site.pochak.app.core.designsystem.component.HorizontalPadding
 import com.site.pochak.app.core.designsystem.component.PochakTextStyle
 import com.site.pochak.app.core.designsystem.component.PochakTopAppBar
 import com.site.pochak.app.core.designsystem.component.PostImage
 import com.site.pochak.app.core.designsystem.component.RefreshableLazyVerticalGrid
+import com.site.pochak.app.core.designsystem.component.noRippleClickable
 import com.site.pochak.app.core.designsystem.icon.PochakIcons
 import com.site.pochak.app.core.designsystem.theme.Yellow00
 import com.site.pochak.app.core.model.data.Post
@@ -74,9 +72,11 @@ internal fun ProfileRoute(
     ProfileScreen(
         modifier = modifier,
         uiState = uiState,
+        isFollow = viewModel.isFollow,
         pochakedPosts = pochakedPosts,
         pochakPosts = pochakPosts,
         navigateToPostDetail = navigateToPostDetail,
+        onClickFollow = viewModel::followMember,
     )
 }
 
@@ -84,9 +84,11 @@ internal fun ProfileRoute(
 internal fun ProfileScreen(
     modifier: Modifier = Modifier,
     uiState: ProfileUiState,
+    isFollow: Boolean?,
     pochakedPosts: LazyPagingItems<Post>,
     pochakPosts: LazyPagingItems<Post>,
     navigateToPostDetail: (Int) -> Unit,
+    onClickFollow: () -> Unit,
 ) {
     Box(
         modifier = modifier.fillMaxSize(),
@@ -102,9 +104,11 @@ internal fun ProfileScreen(
 
                 ProfileContent(
                     profile = profile,
+                    isFollow = isFollow,
                     pochakedPosts = pochakedPosts,
                     pochakPosts = pochakPosts,
                     navigateToPostDetail = navigateToPostDetail,
+                    onClickFollow = onClickFollow,
                 )
             }
 
@@ -119,9 +123,11 @@ internal fun ProfileScreen(
 private fun ProfileContent(
     modifier: Modifier = Modifier,
     profile: NetworkProfile,
+    isFollow: Boolean?,
     pochakedPosts: LazyPagingItems<Post>,
     pochakPosts: LazyPagingItems<Post>,
     navigateToPostDetail: (Int) -> Unit,
+    onClickFollow: () -> Unit,
 ) {
     Column(
         modifier = modifier
@@ -146,12 +152,28 @@ private fun ProfileContent(
             }
         )
 
+        // Profile image and info
         ProfileTopContent(
             profile = profile
         )
 
-        Spacer(modifier = Modifier.height(40.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
+        // Follow button
+        isFollow?.let {
+            FollowButton(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = HorizontalPadding),
+                isFollow = it,
+                paddingValues = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
+                onClick = onClickFollow,
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Pochaked and Pochak posts
         ProfileTabContent(
             pochakedPosts = pochakedPosts,
             pochakPosts = pochakPosts,
@@ -176,16 +198,29 @@ private fun ProfileTopContent(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(HorizontalPadding),
         ) {
-            CircleCropAsyncImage(
-                imageUrl = profile.profileImage,
-                modifier = Modifier
-                    .size(116.dp)
-                    .border(
-                        width = 2.dp,
-                        color = Yellow00,
-                        shape = CircleShape
-                    ),
-            )
+            Box(modifier = Modifier.size(116.dp)) {
+                CircleCropAsyncImage(
+                    imageUrl = profile.profileImage,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .border(
+                            width = 2.dp,
+                            color = Yellow00,
+                            shape = CircleShape
+                        ),
+                )
+
+                Image(
+                    painter = painterResource(id = PochakIcons.EditProfile),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .offset(y = 12.dp)
+                        .clip(CircleShape)
+                        .noRippleClickable {  }
+                        .padding(12.dp)
+                        .align(Alignment.BottomEnd)
+                )
+            }
 
             Column(
                 modifier = Modifier.padding(top = 16.dp),
