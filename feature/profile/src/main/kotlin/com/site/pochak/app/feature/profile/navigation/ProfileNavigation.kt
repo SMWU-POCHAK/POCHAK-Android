@@ -19,11 +19,13 @@ fun NavController.navigateToProfile(
 fun NavGraphBuilder.profileScreen(
     navigateToPostDetail: (Int) -> Unit,
     navigateToProfileSetting: (String) -> Unit,
+    navigateToFollow: (String, Int, Int, Int) -> Unit,
 ) {
     composable<ProfileRoute> {
         ProfileRoute(
             navigateToPostDetail = navigateToPostDetail,
             navigateToProfileSetting = navigateToProfileSetting,
+            navigateToFollow = navigateToFollow,
         )
     }
 }

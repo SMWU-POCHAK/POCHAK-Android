@@ -1,5 +1,6 @@
 package com.site.pochak.app.feature.profile
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -67,6 +68,7 @@ internal fun ProfileRoute(
     viewModel: ProfileViewModel = hiltViewModel(),
     navigateToPostDetail: (Int) -> Unit,
     navigateToProfileSetting: (String) -> Unit,
+    navigateToFollow: (String, Int, Int, Int) -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val pochakedPosts = viewModel.pochakedPosts.collectAsLazyPagingItems()
@@ -81,6 +83,7 @@ internal fun ProfileRoute(
         navigateToPostDetail = navigateToPostDetail,
         onClickFollow = viewModel::followMember,
         navigateToProfileSetting = navigateToProfileSetting,
+        navigateToFollow = navigateToFollow,
     )
 }
 
@@ -94,6 +97,7 @@ internal fun ProfileScreen(
     navigateToPostDetail: (Int) -> Unit,
     onClickFollow: () -> Unit,
     navigateToProfileSetting: (String) -> Unit,
+    navigateToFollow: (String, Int, Int, Int) -> Unit,
 ) {
     Box(
         modifier = modifier.fillMaxSize(),
@@ -115,6 +119,7 @@ internal fun ProfileScreen(
                     navigateToPostDetail = navigateToPostDetail,
                     onClickFollow = onClickFollow,
                     navigateToProfileSetting = navigateToProfileSetting,
+                    navigateToFollow = navigateToFollow,
                 )
             }
 
@@ -135,6 +140,7 @@ private fun ProfileContent(
     navigateToPostDetail: (Int) -> Unit,
     onClickFollow: () -> Unit,
     navigateToProfileSetting: (String) -> Unit,
+    navigateToFollow: (String, Int, Int, Int) -> Unit,
 ) {
     Column(
         modifier = modifier
@@ -163,6 +169,8 @@ private fun ProfileContent(
         ProfileTopContent(
             profile = profile,
             navigateToProfileSetting = navigateToProfileSetting,
+            isFollow = isFollow,
+            navigateToFollow = navigateToFollow,
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -194,7 +202,9 @@ private fun ProfileContent(
 private fun ProfileTopContent(
     modifier: Modifier = Modifier,
     profile: NetworkProfile,
-    navigateToProfileSetting: (String) -> Unit
+    navigateToProfileSetting: (String) -> Unit,
+    isFollow: Boolean?,
+    navigateToFollow: (String, Int, Int, Int) -> Unit,
 ) {
     Column(
         modifier = modifier
@@ -219,23 +229,26 @@ private fun ProfileTopContent(
                         ),
                 )
 
-                Image(
-                    painter = painterResource(id = PochakIcons.EditProfile),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .offset(y = 12.dp)
-                        .clip(CircleShape)
-                        .noRippleClickable {
-                            navigateToProfileSetting(
-                                Json.encodeToString(
-                                    NetworkProfile.serializer(),
-                                    profile
+                // 내 프로필 화면에서만 편집 버튼 활성화
+                if (isFollow == null) {
+                    Image(
+                        painter = painterResource(id = PochakIcons.EditProfile),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .offset(y = 12.dp)
+                            .clip(CircleShape)
+                            .noRippleClickable {
+                                navigateToProfileSetting(
+                                    Json.encodeToString(
+                                        NetworkProfile.serializer(),
+                                        profile
+                                    )
                                 )
-                            )
-                        }
-                        .padding(12.dp)
-                        .align(Alignment.BottomEnd)
-                )
+                            }
+                            .padding(12.dp)
+                            .align(Alignment.BottomEnd)
+                    )
+                }
             }
 
             Column(
@@ -266,11 +279,13 @@ private fun ProfileTopContent(
             ProfileTextAndCount(
                 text = "팔로워",
                 count = profile.followerCount,
+                onClick = { navigateToFollow(profile.handle, profile.followerCount, profile.followingCount, 0) },
             )
 
             ProfileTextAndCount(
                 text = "팔로잉",
                 count = profile.followingCount,
+                onClick = { navigateToFollow(profile.handle, profile.followerCount, profile.followingCount, 1) },
             )
         }
     }
@@ -281,9 +296,10 @@ private fun ProfileTextAndCount(
     modifier: Modifier = Modifier,
     text: String,
     count: Int?,
+    onClick: () -> Unit = {},
 ) {
     Column(
-        modifier = modifier,
+        modifier = modifier.noRippleClickable(onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(

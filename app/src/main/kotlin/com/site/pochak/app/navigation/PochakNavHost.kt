@@ -20,6 +20,8 @@ import com.site.pochak.app.feature.post.detail.navigation.navigateToPostDetail
 import com.site.pochak.app.feature.post.detail.navigation.postDetailScreen
 import com.site.pochak.app.feature.post.navigation.navigateToSearchHistory
 import com.site.pochak.app.feature.post.navigation.searchHistoryScreen
+import com.site.pochak.app.feature.profile.navigation.followScreen
+import com.site.pochak.app.feature.profile.navigation.navigateToFollow
 import com.site.pochak.app.feature.profile.navigation.navigateToProfile
 import com.site.pochak.app.feature.profile.navigation.profileScreen
 import com.site.pochak.app.feature.profile.setting.navigation.navigateToProfileSetting
@@ -102,6 +104,20 @@ fun PochakNavHost(
                 navController.navigateToProfileSetting(
                     profileInfoJson = profile
                 )
+            },
+            navigateToFollow = { handle, followerCount, followingCount, selectedTab ->
+                navController.navigateToFollow(
+                    handle = handle,
+                    followerCount = followerCount,
+                    followingCount = followingCount,
+                    selectedTab = selectedTab
+                )
+            }
+        )
+        followScreen(
+            onBack = { navController.popBackStack() },
+            navigateToProfile = { handle ->
+                navController.navigateToProfile(handle = handle)
             }
         )
         profileSettingScreen(

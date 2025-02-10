@@ -1,18 +1,21 @@
 package com.site.pochak.app.core.data.repository
 
+import androidx.paging.PagingData
 import com.site.pochak.app.core.network.model.MemberPageResponse
+import com.site.pochak.app.core.network.model.NetworkMember
 import com.site.pochak.app.core.network.utils.ApiResult
+import kotlinx.coroutines.flow.Flow
 
 interface FollowRepository {
     /**
      * @return: [MemberPageResponse]
      */
-    suspend fun getFollowing(handle: String, page: Int = 0): ApiResult
+    fun getFollowing(handle: String, page: Int = 0): Flow<PagingData<NetworkMember>>
 
     /**
      * @return: [MemberPageResponse]
      */
-    suspend fun getFollower(handle: String, page: Int = 0): ApiResult
+    fun getFollower(handle: String, page: Int = 0): Flow<PagingData<NetworkMember>>
 
     suspend fun followMember(handle: String): ApiResult
 
