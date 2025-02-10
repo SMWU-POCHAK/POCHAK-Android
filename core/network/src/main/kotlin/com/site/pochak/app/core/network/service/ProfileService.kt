@@ -6,6 +6,7 @@ import com.site.pochak.app.core.network.model.NetworkResponse
 import com.site.pochak.app.core.network.model.PostPageResponse
 import okhttp3.MultipartBody
 import retrofit2.http.GET
+import retrofit2.http.Multipart
 import retrofit2.http.PUT
 import retrofit2.http.Part
 import retrofit2.http.Path
@@ -39,6 +40,7 @@ interface ProfileService {
         @Query(value = "page") page: Int,
     ): NetworkResponse<PostPageResponse>
 
+    @Multipart
     @PUT(value = "api/v2/members/{handle}")
     suspend fun updateProfile(
         @Path(value = "handle") handle: String,

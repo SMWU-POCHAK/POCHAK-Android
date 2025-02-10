@@ -27,4 +27,5 @@ object PochakIcons {
     val DeleteGray06 = R.drawable.ic_delete_gray06
     val DeleteGray04 = R.drawable.ic_delete_gray04
     val EditProfile = R.drawable.ic_edit_profile
+    val Checked = R.drawable.ic_checked
 }

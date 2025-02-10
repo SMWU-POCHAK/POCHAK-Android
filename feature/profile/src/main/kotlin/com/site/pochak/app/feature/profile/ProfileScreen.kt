@@ -58,12 +58,15 @@ import com.site.pochak.app.core.designsystem.icon.PochakIcons
 import com.site.pochak.app.core.designsystem.theme.Yellow00
 import com.site.pochak.app.core.model.data.Post
 import com.site.pochak.app.core.network.model.NetworkProfile
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonDecoder
 
 @Composable
 internal fun ProfileRoute(
     modifier: Modifier = Modifier,
     viewModel: ProfileViewModel = hiltViewModel(),
     navigateToPostDetail: (Int) -> Unit,
+    navigateToProfileSetting: (String) -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val pochakedPosts = viewModel.pochakedPosts.collectAsLazyPagingItems()
@@ -77,6 +80,7 @@ internal fun ProfileRoute(
         pochakPosts = pochakPosts,
         navigateToPostDetail = navigateToPostDetail,
         onClickFollow = viewModel::followMember,
+        navigateToProfileSetting = navigateToProfileSetting,
     )
 }
 
@@ -89,6 +93,7 @@ internal fun ProfileScreen(
     pochakPosts: LazyPagingItems<Post>,
     navigateToPostDetail: (Int) -> Unit,
     onClickFollow: () -> Unit,
+    navigateToProfileSetting: (String) -> Unit,
 ) {
     Box(
         modifier = modifier.fillMaxSize(),
@@ -109,6 +114,7 @@ internal fun ProfileScreen(
                     pochakPosts = pochakPosts,
                     navigateToPostDetail = navigateToPostDetail,
                     onClickFollow = onClickFollow,
+                    navigateToProfileSetting = navigateToProfileSetting,
                 )
             }
 
@@ -128,6 +134,7 @@ private fun ProfileContent(
     pochakPosts: LazyPagingItems<Post>,
     navigateToPostDetail: (Int) -> Unit,
     onClickFollow: () -> Unit,
+    navigateToProfileSetting: (String) -> Unit,
 ) {
     Column(
         modifier = modifier
@@ -154,7 +161,8 @@ private fun ProfileContent(
 
         // Profile image and info
         ProfileTopContent(
-            profile = profile
+            profile = profile,
+            navigateToProfileSetting = navigateToProfileSetting,
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -186,6 +194,7 @@ private fun ProfileContent(
 private fun ProfileTopContent(
     modifier: Modifier = Modifier,
     profile: NetworkProfile,
+    navigateToProfileSetting: (String) -> Unit
 ) {
     Column(
         modifier = modifier
@@ -216,7 +225,14 @@ private fun ProfileTopContent(
                     modifier = Modifier
                         .offset(y = 12.dp)
                         .clip(CircleShape)
-                        .noRippleClickable {  }
+                        .noRippleClickable {
+                            navigateToProfileSetting(
+                                Json.encodeToString(
+                                    NetworkProfile.serializer(),
+                                    profile
+                                )
+                            )
+                        }
                         .padding(12.dp)
                         .align(Alignment.BottomEnd)
                 )

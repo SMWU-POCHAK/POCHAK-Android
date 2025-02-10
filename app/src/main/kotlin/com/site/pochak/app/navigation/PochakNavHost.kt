@@ -98,6 +98,11 @@ fun PochakNavHost(
             navigateToPostDetail = { postId ->
                 navController.navigateToPostDetail(postId)
             },
+            navigateToProfileSetting = { profile ->
+                navController.navigateToProfileSetting(
+                    profileInfoJson = profile
+                )
+            }
         )
         profileSettingScreen(
             navigateToHome = {
