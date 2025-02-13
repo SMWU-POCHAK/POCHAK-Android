@@ -219,45 +219,47 @@ private fun MemberItem(
 ) {
     var isFollow by remember { mutableStateOf(member.isFollow) }
 
-    Row(
-        modifier = Modifier
-            .padding(vertical = 12.dp)
-            .fillMaxWidth()
-            .noRippleClickable { navigateToProfile(member.handle) },
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        CircleCropAsyncImage(
-            modifier = Modifier.size(52.dp),
-            imageUrl = member.profileImage,
-            onClick = { navigateToProfile(member.handle) },
-        )
-
-        Column(
+    Column {
+        Row(
             modifier = Modifier
-                .padding(start = 16.dp)
-                .weight(1f)
+                .padding(vertical = 12.dp)
+                .fillMaxWidth()
+                .noRippleClickable { navigateToProfile(member.handle) },
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                text = member.handle,
-                style = PochakTextStyle.body3_1,
+            CircleCropAsyncImage(
+                modifier = Modifier.size(52.dp),
+                imageUrl = member.profileImage,
+                onClick = { navigateToProfile(member.handle) },
             )
 
-            Text(
-                text = member.name,
-                style = PochakTextStyle.body3,
-            )
+            Column(
+                modifier = Modifier
+                    .padding(start = 16.dp)
+                    .weight(1f)
+            ) {
+                Text(
+                    text = member.handle,
+                    style = PochakTextStyle.body3_1,
+                )
+
+                Text(
+                    text = member.name,
+                    style = PochakTextStyle.body3,
+                )
+            }
+
+            isFollow?.let {
+                FollowButton(
+                    isFollow = it,
+                    onClick = {
+                        onFollow()
+                        isFollow = !it
+                    },
+                )
+            }
         }
 
-        isFollow?.let {
-            FollowButton(
-                isFollow = it,
-                onClick = {
-                    onFollow()
-                    isFollow = !it
-                },
-            )
-        }
+        HorizontalDivider(color = Gray01)
     }
-
-    HorizontalDivider(color = Gray01)
 }

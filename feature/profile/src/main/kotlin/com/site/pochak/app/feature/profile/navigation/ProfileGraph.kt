@@ -86,10 +86,5 @@ fun NavGraphBuilder.profileGraph(
             onBack = onBack,
             navigateToProfile = navigateToProfile,
         )
-
-        postDetailScreen(
-            onBack = onBack,
-            navigateToProfile = navigateToProfile,
-        )
     }
 }
