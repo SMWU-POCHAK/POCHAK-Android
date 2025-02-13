@@ -10,6 +10,7 @@ import androidx.navigation.toRoute
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import androidx.paging.map
+import com.site.pochak.app.core.data.repository.BlockRepository
 import com.site.pochak.app.core.data.repository.ProfileRepository
 import com.site.pochak.app.core.datastore.TokenManager
 import com.site.pochak.app.core.domain.FollowUseCase
@@ -35,6 +36,7 @@ class ProfileViewModel @Inject constructor(
     tokenManager: TokenManager,
     private val profileRepository: ProfileRepository,
     private val followUseCase: FollowUseCase,
+    private val blockRepository: BlockRepository,
 ) : ViewModel() {
     private val handleKey = "handle"
 
@@ -113,6 +115,16 @@ class ProfileViewModel @Inject constructor(
                             }
                         }
                 }
+            }
+        }
+    }
+
+    fun blockMember() {
+        viewModelScope.launch {
+            val uiState = uiState.first()
+
+            if (uiState is ProfileUiState.Success) {
+                blockRepository.blockMember(uiState.profile.handle)
             }
         }
     }

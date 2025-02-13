@@ -9,7 +9,7 @@ data class NetworkMember(
     val profileImage: String,
     val handle: String,
     val name: String,
-    val isFollow: Boolean?
+    val isFollow: Boolean? = null
 )
 
 fun NetworkMember.toModel(): Member {

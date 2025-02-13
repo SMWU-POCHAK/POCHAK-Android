@@ -1,7 +1,13 @@
 package com.site.pochak.app.core.data.repository
 
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
+import com.site.pochak.app.core.data.paging.ItemPagingSource
+import com.site.pochak.app.core.network.model.NetworkMember
 import com.site.pochak.app.core.network.service.BlockService
 import com.site.pochak.app.core.network.utils.ApiResultHandler
+import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 class BlockRepositoryImpl @Inject constructor(
@@ -11,10 +17,18 @@ class BlockRepositoryImpl @Inject constructor(
         blockService.blockMember(handle)
     }
 
-    override suspend fun getBlockedMembers(handle: String, page: Int) =
-        ApiResultHandler.handleResult {
-            blockService.getBlockedMembers(handle, page)
-        }
+    override fun getBlockedMembers(handle: String): Flow<PagingData<NetworkMember>> {
+        return Pager(
+            config = PagingConfig(pageSize = 30, prefetchDistance = 2),
+            pagingSourceFactory = {
+                ItemPagingSource<NetworkMember> { page ->
+                    ApiResultHandler.handleResult {
+                        blockService.getBlockedMembers(handle, page)
+                    }
+                }
+            }
+        ).flow
+    }
 
     override suspend fun unblockUser(handle: String, blockedMemberHandle: String) =
         ApiResultHandler.handleResult {

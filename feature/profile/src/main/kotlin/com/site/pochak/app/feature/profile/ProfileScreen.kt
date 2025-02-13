@@ -24,12 +24,17 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -60,10 +65,12 @@ import com.site.pochak.app.core.designsystem.component.PostImage
 import com.site.pochak.app.core.designsystem.component.RefreshableLazyVerticalGrid
 import com.site.pochak.app.core.designsystem.component.noRippleClickable
 import com.site.pochak.app.core.designsystem.icon.PochakIcons
+import com.site.pochak.app.core.designsystem.theme.Gray01
 import com.site.pochak.app.core.designsystem.theme.Yellow00
 import com.site.pochak.app.core.model.data.Post
 import com.site.pochak.app.core.network.model.NetworkProfile
 import com.site.pochak.app.feature.profile.navigation.ProfileRoute
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonDecoder
 
@@ -74,6 +81,7 @@ internal fun ProfileRoute(
     navigateToPostDetail: (Int) -> Unit,
     navigateToProfileSetting: (String) -> Unit,
     navigateToFollow: (String, Int, Int, Int) -> Unit,
+    navigateToSetting: () -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val pochakedPosts = viewModel.pochakedPosts.collectAsLazyPagingItems()
@@ -89,6 +97,8 @@ internal fun ProfileRoute(
         onClickFollow = viewModel::followMember,
         navigateToProfileSetting = navigateToProfileSetting,
         navigateToFollow = navigateToFollow,
+        navigateToSetting = navigateToSetting,
+        onBlock = viewModel::blockMember,
     )
 }
 
@@ -103,6 +113,8 @@ internal fun ProfileScreen(
     onClickFollow: () -> Unit,
     navigateToProfileSetting: (String) -> Unit,
     navigateToFollow: (String, Int, Int, Int) -> Unit,
+    navigateToSetting: () -> Unit,
+    onBlock: () -> Unit,
 ) {
     Box(
         modifier = modifier.fillMaxSize(),
@@ -125,6 +137,8 @@ internal fun ProfileScreen(
                     onClickFollow = onClickFollow,
                     navigateToProfileSetting = navigateToProfileSetting,
                     navigateToFollow = navigateToFollow,
+                    navigateToSetting = navigateToSetting,
+                    onBlock = onBlock,
                 )
             }
 
@@ -135,6 +149,7 @@ internal fun ProfileScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ProfileContent(
     modifier: Modifier = Modifier,
@@ -146,7 +161,13 @@ private fun ProfileContent(
     onClickFollow: () -> Unit,
     navigateToProfileSetting: (String) -> Unit,
     navigateToFollow: (String, Int, Int, Int) -> Unit,
+    navigateToSetting: () -> Unit,
+    onBlock: () -> Unit,
 ) {
+    val sheetState = rememberModalBottomSheetState()
+    val scope = rememberCoroutineScope()
+    var showBottomSheet by remember { mutableStateOf(false) }
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -161,9 +182,18 @@ private fun ProfileContent(
                 )
             },
             rightContent = {
-                IconButton(onClick = { /* TODO */ }) {
+                IconButton(onClick = {
+                    if (isFollow == null) {
+                        navigateToSetting()
+                    } else {
+                        showBottomSheet = true
+                    }
+                }) {
                     Image(
-                        painter = painterResource(id = PochakIcons.More),
+                        painter = painterResource(
+                            if (isFollow == null) PochakIcons.Setting
+                            else PochakIcons.More
+                        ),
                         contentDescription = null
                     )
                 }
@@ -200,6 +230,64 @@ private fun ProfileContent(
             pochakPosts = pochakPosts,
             navigateToPostDetail = navigateToPostDetail,
         )
+    }
+
+    if (showBottomSheet) {
+        ModalBottomSheet(
+            onDismissRequest = {
+                showBottomSheet = false
+            },
+            sheetState = sheetState,
+        ) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(
+                    text = "더보기",
+                    style = PochakTextStyle.body1,
+                    modifier = Modifier.padding(vertical = 16.dp),
+                )
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = HorizontalPadding, vertical = 16.dp)
+                        .clickable { onBlock() },
+                ) {
+                    Text(
+                        text = "차단하기",
+                        style = PochakTextStyle.body2,
+                    )
+                }
+
+                HorizontalDivider(color = Gray01)
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = HorizontalPadding, vertical = 16.dp)
+                        .clickable {
+                            scope.launch { sheetState.hide() }.invokeOnCompletion {
+                                if (!sheetState.isVisible) {
+                                    showBottomSheet = false
+                                }
+                            }
+                        },
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    Image(
+                        painter = painterResource(id = PochakIcons.Cancel),
+                        contentDescription = null,
+                    )
+
+                    Text(
+                        text = "취소",
+                        style = PochakTextStyle.body2,
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -284,13 +372,27 @@ private fun ProfileTopContent(
             ProfileTextAndCount(
                 text = "팔로워",
                 count = profile.followerCount,
-                onClick = { navigateToFollow(profile.handle, profile.followerCount, profile.followingCount, 0) },
+                onClick = {
+                    navigateToFollow(
+                        profile.handle,
+                        profile.followerCount,
+                        profile.followingCount,
+                        0
+                    )
+                },
             )
 
             ProfileTextAndCount(
                 text = "팔로잉",
                 count = profile.followingCount,
-                onClick = { navigateToFollow(profile.handle, profile.followerCount, profile.followingCount, 1) },
+                onClick = {
+                    navigateToFollow(
+                        profile.handle,
+                        profile.followerCount,
+                        profile.followingCount,
+                        1
+                    )
+                },
             )
         }
     }

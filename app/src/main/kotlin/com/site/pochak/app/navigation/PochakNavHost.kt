@@ -25,6 +25,10 @@ import com.site.pochak.app.feature.profile.navigation.navigateToProfile
 import com.site.pochak.app.feature.profile.navigation.profileGraph
 import com.site.pochak.app.feature.profile.setting.navigation.navigateToProfileSetting
 import com.site.pochak.app.feature.profile.setting.navigation.profileSettingScreen
+import com.site.pochak.app.feature.setting.navigation.BlockUserRoute
+import com.site.pochak.app.feature.setting.navigation.navigateToBlockUser
+import com.site.pochak.app.feature.setting.navigation.navigateToSetting
+import com.site.pochak.app.feature.setting.navigation.settingGraph
 import com.site.pochak.app.feature.splash.navigation.SplashRoute
 import com.site.pochak.app.feature.splash.navigation.splashScreen
 import com.site.pochak.app.navigation.TopLevelDestination.HOME
@@ -115,6 +119,9 @@ fun PochakNavHost(
             },
             navigateToProfile = { handle ->
                 navController.navigateToProfile(handle = handle)
+            },
+            navigateToSetting = {
+                navController.navigateToSetting()
             }
         )
         profileSettingScreen(
@@ -123,6 +130,20 @@ fun PochakNavHost(
                 navController.graph.setStartDestination(HomeRoute)
             },
             onBack = { navController.popBackStack() },
+        )
+        settingGraph(
+            onBack = { navController.popBackStack() },
+            navigateToLogin = {
+                navController.navigateToLogin(
+                    navOptions {
+                        popUpTo(HomeRoute) {
+                            inclusive = true
+                        }
+                    }
+                )
+                navController.graph.setStartDestination(LoginRoute)
+            },
+            navigateToBlockUser = navController::navigateToBlockUser
         )
     }
 }

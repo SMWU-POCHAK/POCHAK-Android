@@ -26,9 +26,6 @@ data class FollowRoute(
     val selectedTab: Int,
 )
 
-@Serializable
-data object SettingRoute
-
 fun NavController.navigateToProfile(
     navOptions: NavOptions? = null,
     handle: String? = null,
@@ -46,12 +43,14 @@ internal fun NavGraphBuilder.profileScreen(
     navigateToPostDetail: (Int) -> Unit,
     navigateToProfileSetting: (String) -> Unit,
     navigateToFollow: (String, Int, Int, Int) -> Unit,
+    navigateToSetting: () -> Unit,
 ) {
     composable<ProfileRoute> {
         ProfileRoute(
             navigateToPostDetail = navigateToPostDetail,
             navigateToProfileSetting = navigateToProfileSetting,
             navigateToFollow = navigateToFollow,
+            navigateToSetting = navigateToSetting,
         )
     }
 }
@@ -74,12 +73,14 @@ fun NavGraphBuilder.profileGraph(
     navigateToProfileSetting: (String) -> Unit,
     navigateToFollow: (String, Int, Int, Int) -> Unit,
     navigateToProfile: (String) -> Unit,
+    navigateToSetting: () -> Unit,
 ) {
     navigation<ProfileGraph>(startDestination = ProfileRoute) {
         profileScreen(
             navigateToPostDetail = navigateToPostDetail,
             navigateToProfileSetting = navigateToProfileSetting,
             navigateToFollow = navigateToFollow,
+            navigateToSetting = navigateToSetting,
         )
 
         followScreen(
