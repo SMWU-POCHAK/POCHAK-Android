@@ -1,6 +1,5 @@
 package com.site.pochak.app.feature.profile
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,12 +17,12 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -31,30 +30,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.ViewModel
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.site.pochak.app.core.designsystem.component.BackButton
 import com.site.pochak.app.core.designsystem.component.CircleCropAsyncImage
 import com.site.pochak.app.core.designsystem.component.FollowButton
-import com.site.pochak.app.core.designsystem.component.MoreButton
 import com.site.pochak.app.core.designsystem.component.PochakTextStyle
 import com.site.pochak.app.core.designsystem.component.PochakTopAppBar
-import com.site.pochak.app.core.designsystem.component.PostImage
 import com.site.pochak.app.core.designsystem.component.RefreshableLazyVerticalGrid
 import com.site.pochak.app.core.designsystem.component.noRippleClickable
 import com.site.pochak.app.core.designsystem.theme.Gray01
-import com.site.pochak.app.core.designsystem.theme.PochakTheme
 import com.site.pochak.app.core.designsystem.theme.Yellow00
 import com.site.pochak.app.core.model.data.Member
-import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 
 @Composable
 fun FollowRoute(
@@ -74,6 +65,7 @@ fun FollowRoute(
         followerList = followerList,
         followingList = followingList,
         navigateToProfile = navigateToProfile,
+        followMember = viewModel::followMember,
     )
 }
 
@@ -85,6 +77,7 @@ internal fun FollowScreen(
     followerList: LazyPagingItems<Member>,
     followingList: LazyPagingItems<Member>,
     navigateToProfile: (String) -> Unit,
+    followMember: (String) -> Unit,
 ) {
    Box(
         modifier = modifier
@@ -103,6 +96,7 @@ internal fun FollowScreen(
                    followerList = followerList,
                    followingList = followingList,
                    navigateToProfile = navigateToProfile,
+                   followMember = followMember,
                )
            }
 
@@ -120,6 +114,7 @@ private fun FollowContent(
     followerList: LazyPagingItems<Member>,
     followingList: LazyPagingItems<Member>,
     navigateToProfile: (String) -> Unit,
+    followMember: (String) -> Unit,
 ) {
     var selectedTabIndex by remember { mutableIntStateOf(uiState.selectedTab) }
 
@@ -188,7 +183,7 @@ private fun FollowContent(
                         MemberItem(
                             member = it,
                             navigateToProfile = navigateToProfile,
-                            onFollow = {}
+                            onFollow = { followMember(it.handle) }
                         )
                     }
                 }
@@ -222,11 +217,14 @@ private fun MemberItem(
     navigateToProfile: (String) -> Unit,
     onFollow: () -> Unit
 ) {
+    var isFollow by remember { mutableStateOf(member.isFollow) }
+
     Row(
         modifier = Modifier
             .padding(vertical = 12.dp)
             .fillMaxWidth()
-            .noRippleClickable { navigateToProfile(member.handle) }
+            .noRippleClickable { navigateToProfile(member.handle) },
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         CircleCropAsyncImage(
             modifier = Modifier.size(52.dp),
@@ -250,9 +248,13 @@ private fun MemberItem(
             )
         }
 
-        member.isFollow?.let {
+        isFollow?.let {
             FollowButton(
                 isFollow = it,
+                onClick = {
+                    onFollow()
+                    isFollow = !it
+                },
             )
         }
     }

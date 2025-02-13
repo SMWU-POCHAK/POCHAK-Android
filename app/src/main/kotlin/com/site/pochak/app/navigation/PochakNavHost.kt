@@ -20,10 +20,9 @@ import com.site.pochak.app.feature.post.detail.navigation.navigateToPostDetail
 import com.site.pochak.app.feature.post.detail.navigation.postDetailScreen
 import com.site.pochak.app.feature.post.navigation.navigateToSearchHistory
 import com.site.pochak.app.feature.post.navigation.searchHistoryScreen
-import com.site.pochak.app.feature.profile.navigation.followScreen
 import com.site.pochak.app.feature.profile.navigation.navigateToFollow
 import com.site.pochak.app.feature.profile.navigation.navigateToProfile
-import com.site.pochak.app.feature.profile.navigation.profileScreen
+import com.site.pochak.app.feature.profile.navigation.profileGraph
 import com.site.pochak.app.feature.profile.setting.navigation.navigateToProfileSetting
 import com.site.pochak.app.feature.profile.setting.navigation.profileSettingScreen
 import com.site.pochak.app.feature.splash.navigation.SplashRoute
@@ -96,7 +95,8 @@ fun PochakNavHost(
             }
         )
         alarmScreen()
-        profileScreen(
+        profileGraph(
+            onBack = { navController.popBackStack() },
             navigateToPostDetail = { postId ->
                 navController.navigateToPostDetail(postId)
             },
@@ -112,10 +112,7 @@ fun PochakNavHost(
                     followingCount = followingCount,
                     selectedTab = selectedTab
                 )
-            }
-        )
-        followScreen(
-            onBack = { navController.popBackStack() },
+            },
             navigateToProfile = { handle ->
                 navController.navigateToProfile(handle = handle)
             }

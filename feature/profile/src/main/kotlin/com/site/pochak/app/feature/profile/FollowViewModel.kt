@@ -8,6 +8,7 @@ import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import androidx.paging.map
 import com.site.pochak.app.core.data.repository.FollowRepository
+import com.site.pochak.app.core.domain.FollowUseCase
 import com.site.pochak.app.core.model.data.Member
 import com.site.pochak.app.core.network.model.NetworkMember
 import com.site.pochak.app.core.network.model.toModel
@@ -19,12 +20,14 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class FollowViewModel @Inject constructor(
     saveStateHandle: SavedStateHandle,
     followRepository: FollowRepository,
+    private val followUseCase: FollowUseCase,
 ) : ViewModel() {
     private val handleKey = "handle"
     private val followerCountKey = "followerCount"
@@ -62,7 +65,6 @@ class FollowViewModel @Inject constructor(
             selectedTab = selectedTab
         )
     }
-        .map { it as FollowUiState }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(),
@@ -92,6 +94,15 @@ class FollowViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(),
             initialValue = PagingData.empty()
         )
+
+    fun followMember(handle: String) {
+        viewModelScope.launch {
+            followUseCase.invoke(handle)
+                .collect {
+
+                }
+        }
+    }
 }
 
 sealed interface FollowUiState {
@@ -102,5 +113,6 @@ sealed interface FollowUiState {
         val followingCount: Int,
         val selectedTab: Int,
     ) : FollowUiState
+
     data class Error(val message: String) : FollowUiState
 }

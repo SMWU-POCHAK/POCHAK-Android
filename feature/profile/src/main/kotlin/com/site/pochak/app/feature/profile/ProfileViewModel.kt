@@ -18,7 +18,7 @@ import com.site.pochak.app.core.network.model.NetworkPost
 import com.site.pochak.app.core.network.model.NetworkProfile
 import com.site.pochak.app.core.network.model.toModel
 import com.site.pochak.app.core.network.utils.ApiResult
-import com.site.pochak.app.feature.profile.navigation.ProfileRoute
+import com.site.pochak.app.feature.profile.navigation.ProfileGraph
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -38,7 +38,7 @@ class ProfileViewModel @Inject constructor(
 ) : ViewModel() {
     private val handleKey = "handle"
 
-    private val route = saveStateHandle.toRoute<ProfileRoute>()
+    private val route = saveStateHandle.toRoute<ProfileGraph>()
     private val handle = saveStateHandle.getStateFlow(
         key = handleKey,
         initialValue = route.handle
