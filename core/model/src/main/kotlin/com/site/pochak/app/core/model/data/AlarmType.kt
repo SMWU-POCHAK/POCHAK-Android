@@ -7,5 +7,6 @@ enum class AlarmType {
     FOLLOW,
     OWNER_LIKE,
     TAGGED_LIKE,
-    TAG_APPROVAL
+    TAG_APPROVAL,
+    MOMENT_POST
 }

@@ -89,7 +89,9 @@ fun PochakNavHost(
                 navController.popBackStack()
             }
         )
-        alarmScreen()
+        alarmScreen(
+            navigateToPostDetail = navController::navigateToPostDetail
+        )
         profileScreen()
         profileSettingScreen(
             navigateToHome = {

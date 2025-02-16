@@ -1,5 +1,6 @@
 package com.site.pochak.app.feature.alarm
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
@@ -28,6 +30,10 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -43,7 +49,9 @@ import com.site.pochak.app.core.designsystem.component.PochakTopAppBar
 import com.site.pochak.app.core.designsystem.component.RefreshableLazyVerticalGrid
 import com.site.pochak.app.core.designsystem.theme.Gray01
 import com.site.pochak.app.core.designsystem.theme.Gray04
+import com.site.pochak.app.core.designsystem.theme.Yellow01
 import com.site.pochak.app.core.model.data.Alarm
+import com.site.pochak.app.core.model.data.AlarmType
 import com.site.pochak.app.core.model.data.getDescription
 import com.site.pochak.app.core.model.data.getElapsedTime
 import com.site.pochak.app.core.model.data.getPostImage
@@ -53,7 +61,8 @@ import com.site.pochak.app.core.model.data.getProfileImageUrl
 internal fun AlarmRoute(
     modifier: Modifier = Modifier,
     viewModel: AlarmViewModel = hiltViewModel(),
-) {
+    navigateToPostDetail: (Int) -> Unit,
+    ) {
     val allAlarms = viewModel.allAlarms.collectAsStateWithLifecycle()
     val isLoading = viewModel.isLoading.collectAsStateWithLifecycle()
     val isRefreshing = viewModel.isRefreshing.collectAsStateWithLifecycle()
@@ -65,6 +74,7 @@ internal fun AlarmRoute(
         isLoading = isLoading.value,
         isRefreshing = isRefreshing.value,
         onLoadPage = viewModel::loadPage,
+        onPostDetailClick = navigateToPostDetail
     )
 }
 
@@ -76,6 +86,7 @@ internal fun AlarmScreen(
     isLoading: Boolean,
     isRefreshing: Boolean,
     onLoadPage: (Boolean) -> Unit,
+    onPostDetailClick: (Int) -> Unit,
 ) {
     Column(
         modifier = modifier
@@ -84,7 +95,7 @@ internal fun AlarmScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         PochakTopAppBar(
-            centerContent = { Text(text = stringResource(R.string.feature_alarm_title)) },
+            centerContent = { Text(text = stringResource(R.string.feature_alarm_title))},
         )
         AlarmContent(
             modifier = modifier,
@@ -93,6 +104,7 @@ internal fun AlarmScreen(
             isLoading = isLoading,
             isRefreshing = isRefreshing,
             onLoadPage = onLoadPage,
+            onPostDetailClick = onPostDetailClick
         )
     }
 }
@@ -106,7 +118,11 @@ fun AlarmContent(
     isLoading: Boolean,
     isRefreshing: Boolean,
     onLoadPage: (Boolean) -> Unit,
+    onPostDetailClick: (Int) -> Unit,
 ) {
+    val selectedAlarmId by viewModel.selectedAlarmId
+    val postPreviewUiState by viewModel.postPreviewUiState
+
     RefreshableLazyVerticalGrid(
         modifier = modifier
             .fillMaxSize(),
@@ -121,7 +137,8 @@ fun AlarmContent(
             AlarmItem(
                 modifier = Modifier,
                 alarm = alarm,
-                viewModel = viewModel
+                viewModel = viewModel,
+                onPostDetailClick = onPostDetailClick
             )
         }
 
@@ -140,16 +157,31 @@ fun AlarmContent(
             }
         }
     }
+
+    if (selectedAlarmId != null && postPreviewUiState is PostPreviewUiState.Success) {
+        val postPreview = (postPreviewUiState as PostPreviewUiState.Success).postPreview
+        TagApprovalBottomSheet(
+            showBottomSheet = true,
+            onDismiss = { viewModel.clearSelectedAlarm() },
+            postPreviewDetail = postPreview,
+            viewModel = viewModel,
+            tagId = selectedAlarmId!!.toInt()
+        )
+    }
 }
 
 @Composable
 fun AlarmItem(
     modifier: Modifier,
     alarm: Alarm,
-    viewModel: AlarmViewModel
+    viewModel: AlarmViewModel,
+    onPostDetailClick: (Int) -> Unit,
 ) {
+    var isClicked by rememberSaveable { mutableStateOf(false) }
+
     Column(
         modifier = modifier
+            .background(if ( isClicked || alarm.isChecked ) MaterialTheme.colorScheme.surface else Yellow01) // 클릭 여부에 따른 배경색 변경
             .padding(horizontal = 20.dp)
             .height(76.dp),
         verticalArrangement = Arrangement.Center
@@ -166,24 +198,67 @@ fun AlarmItem(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { /* 클릭 동작 추가 */ },
+                .clickable {
+                    isClicked = true
+                    viewModel.selectAlarm(alarm.alarmId) // 현재 알람 선택
+                    viewModel.checkAlarm(alarm.alarmId.toInt()) // 알람 상태 확인
+
+                    when (alarm.alarmType) {
+                        AlarmType.TAG_APPROVAL -> {
+                            viewModel.getPostPreview(alarm.alarmId) // 태그 미리보기 가져오기
+                        }
+                        AlarmType.FOLLOW -> {
+                            // 해당 프로필로 이동
+                        }
+                        else -> {
+                            onPostDetailClick(alarm.postId!!.toInt()) // 게시물 상세로 이동
+                        }
+                    }
+                },
             verticalAlignment = Alignment.CenterVertically
         ) {
-            AsyncImage(
-                modifier = Modifier
-                    .padding(start = 10.dp)
-                    .size(44.dp)
-                    .clip(CircleShape),
-                model = alarm.getProfileImageUrl(),
-                contentDescription = "alarm image",
-                contentScale = ContentScale.Crop,
-            )
+            when(alarm.alarmType) {
+                AlarmType.MOMENT_POST -> {
+                    Box(
+                        modifier = Modifier.size(62.dp,44.dp)
+                    ) {
+                        AsyncImage(
+                            model = alarm.ownerProfileImage,
+                            contentDescription = "first user profile image",
+                            modifier = Modifier
+                                .size(44.dp)
+                                .clip(CircleShape),
+                            contentScale = ContentScale.Crop
+                        )
 
-            Spacer(modifier = Modifier.width(18.dp))
+                        AsyncImage(
+                            model = alarm.memberProfileImage,
+                            contentDescription = "second user profile image",
+                            modifier = Modifier
+                                .size(44.dp)
+                                .offset(x = 22.dp) // 가로로 겹치도록 이동
+                                .clip(CircleShape),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
+                }
+                else -> {
+                    AsyncImage(
+                        modifier = Modifier
+                            .padding(start = 10.dp, end = 6.dp)
+                            .size(44.dp)
+                            .clip(CircleShape),
+                        model = alarm.getProfileImageUrl(),
+                        contentDescription = "alarm profile image",
+                        contentScale = ContentScale.Crop,
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
 
             Column(
-                modifier = Modifier
-                    .weight(1f),
+                modifier = Modifier.weight(1f),
             ) {
                 Text(
                     text = alarm.getDescription(),

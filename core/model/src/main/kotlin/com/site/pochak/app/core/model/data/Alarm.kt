@@ -29,16 +29,17 @@ fun Alarm.getDescription(): String {
         AlarmType.OWNER_COMMENT -> "${this.memberHandle ?: ""} 님이 댓글을 달았습니다. : ${this.commentContent ?: ""}"
         AlarmType.TAGGED_COMMENT -> "내가 포착된 게시물에 ${this.memberHandle ?: ""} 님이 댓글을 달았습니다. : ${this.commentContent ?: ""}"
         AlarmType.COMMENT_REPLY -> "나의 댓글에 ${this.memberHandle ?: ""} 님이 답글을 달았습니다. : ${this.commentContent ?: ""}"
-        AlarmType.FOLLOW -> "${this.memberHandle ?: ""} 님이 회원님을 팔로우하였습니다."
+        AlarmType.FOLLOW -> "${this.memberHandle ?: ""} 님이 회원님을 팔로우 하였습니다."
         AlarmType.OWNER_LIKE -> "내 게시물에 ${this.memberHandle ?: ""} 님이 좋아요를 눌렀습니다."
         AlarmType.TAGGED_LIKE -> "내가 포착된 게시물에 ${this.memberHandle ?: ""} 님이 좋아요를 눌렀습니다."
         AlarmType.TAG_APPROVAL -> "${this.ownerHandle ?: ""} 님이 회원님을 포착했습니다."
+        AlarmType.MOMENT_POST -> "방금 ${this.ownerHandle ?: ""} 님과 ${this.memberHandle ?: ""} 님이 서로를 순간 포착했습니다."
     }
 }
 
 fun Alarm.getPostImage(): String? {
     return when (this.alarmType) {
-        AlarmType.TAG_APPROVAL -> this.postImage
+        AlarmType.TAG_APPROVAL, AlarmType.MOMENT_POST -> this.postImage
         else -> null
     }
 }
@@ -49,6 +50,7 @@ fun Alarm.getProfileImageUrl(): String? {
         AlarmType.OWNER_LIKE, AlarmType.TAGGED_LIKE, AlarmType.COMMENT_REPLY -> this.memberProfileImage
         AlarmType.FOLLOW -> this.memberProfileImage
         AlarmType.TAG_APPROVAL -> this.ownerProfileImage
+        else -> null
     }
 }
 
