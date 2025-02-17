@@ -48,3 +48,4 @@ val Gray06 = Color(0xFF343A40)
 val Gray07 = Color(0xFF212529)
 
 val ErrorColor = Color(0xFFFF5858)
+val PositiveColor = Color(0xFF456DFF)

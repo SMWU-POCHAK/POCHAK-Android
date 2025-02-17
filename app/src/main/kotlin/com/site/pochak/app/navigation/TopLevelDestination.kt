@@ -7,7 +7,7 @@ import com.site.pochak.app.feature.alarm.navigation.AlarmRoute
 import com.site.pochak.app.feature.camera.navigation.CameraRoute
 import com.site.pochak.app.feature.post.navigation.PostRoute
 import com.site.pochak.app.feature.home.navigation.HomeRoute
-import com.site.pochak.app.feature.profile.navigation.ProfileRoute
+import com.site.pochak.app.feature.profile.navigation.ProfileGraph
 import kotlin.reflect.KClass
 import com.site.pochak.app.feature.home.R as homeR
 import com.site.pochak.app.feature.post.R as postR
@@ -60,6 +60,6 @@ enum class TopLevelDestination(
         selectedIconId = PochakIcons.ProfileFilled,
         unselectedIconId = PochakIcons.Profile,
         titleTextId = profileR.string.feature_profile_title,
-        route = ProfileRoute::class
+        route = ProfileGraph::class
     ),
 }

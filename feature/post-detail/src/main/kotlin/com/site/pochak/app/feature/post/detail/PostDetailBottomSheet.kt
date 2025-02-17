@@ -58,6 +58,7 @@ internal fun PostDetailBottomSheetContent(
     changeState: (PostDetailBottomSheetState) -> Unit,
     onDelete: () -> Unit,
     reportPost: (String) -> Unit,
+    navigateToProfile: (String) -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
@@ -156,7 +157,7 @@ internal fun PostDetailBottomSheetContent(
                                     imageUrl = tag.profileImage,
                                     title = tag.handle,
                                     text = tag.name,
-                                    onClickItem = { /* 프로필로 이동 */ }
+                                    onClickItem = { navigateToProfile(tag.handle) }
                                 )
 
                                 if (tag != postDetail.tagList.last()) {

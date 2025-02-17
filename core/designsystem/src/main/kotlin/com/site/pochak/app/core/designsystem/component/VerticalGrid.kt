@@ -36,6 +36,49 @@ fun RefreshableLazyVerticalGrid(
     refreshEnabled: Boolean = false,
     refreshState: PullToRefreshState = rememberPullToRefreshState(),
     isRefreshing: Boolean = false,
+    onRefresh: () -> Unit = {},
+    threshold: Dp = 80.dp,
+    state: LazyGridState = rememberLazyGridState(),
+    columns: GridCells = GridCells.Fixed(3),
+    contentPadding: PaddingValues = PaddingValues(horizontal = HorizontalPadding, vertical = VerticalPadding),
+    verticalArrangement: Arrangement.Vertical = Arrangement.spacedBy(8.dp),
+    horizontalArrangement: Arrangement.Horizontal = Arrangement.spacedBy(8.dp),
+    content: LazyGridScope.() -> Unit,
+) {
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .pullToRefresh(
+                isRefreshing = isRefreshing,
+                state = refreshState,
+                enabled = refreshEnabled,
+                threshold = threshold,
+                onRefresh = onRefresh,
+            )
+    ) {
+        RefreshIndicator(refreshState, threshold)
+
+        LazyVerticalGrid(
+            modifier = Modifier
+                .fillMaxSize()
+                .offset(y = refreshState.distanceFraction.dp * threshold.value),
+            state = state,
+            columns = columns,
+            contentPadding = contentPadding,
+            verticalArrangement = verticalArrangement,
+            horizontalArrangement = horizontalArrangement,
+            content = content
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun RefreshableLazyVerticalGrid(
+    modifier: Modifier = Modifier,
+    refreshEnabled: Boolean = false,
+    refreshState: PullToRefreshState = rememberPullToRefreshState(),
+    isRefreshing: Boolean = false,
     threshold: Dp = 80.dp,
     state: LazyGridState = rememberLazyGridState(),
     columns: GridCells = GridCells.Fixed(1),

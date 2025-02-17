@@ -56,6 +56,7 @@ fun PostDetailRoute(
     modifier: Modifier = Modifier,
     viewModel: PostDetailViewModel = hiltViewModel(),
     onBack: () -> Unit,
+    navigateToProfile: (String) -> Unit,
 ) {
     val postDetailUiState by viewModel.postDetailUiState.collectAsStateWithLifecycle()
 
@@ -70,6 +71,7 @@ fun PostDetailRoute(
         postDetailDeleteState = viewModel.postDetailDeleteState,
         deletePost = viewModel::deletePost,
         reportPost = viewModel::reportPost,
+        navigateToProfile = navigateToProfile,
     )
 }
 
@@ -85,6 +87,7 @@ internal fun PostDetailScreen(
     postDetailDeleteState: PostDetailDeleteState,
     deletePost: () -> Unit,
     reportPost: (String) -> Unit,
+    navigateToProfile: (String) -> Unit,
 ) {
     Box(
         modifier = modifier.fillMaxSize(),
@@ -106,6 +109,7 @@ internal fun PostDetailScreen(
                     postDetailDeleteState = postDetailDeleteState,
                     deletePost = deletePost,
                     reportPost = reportPost,
+                    navigateToProfile = navigateToProfile,
                 )
             }
 
@@ -134,6 +138,7 @@ private fun PostDetailContent(
     postDetailDeleteState: PostDetailDeleteState,
     deletePost: () -> Unit,
     reportPost: (String) -> Unit,
+    navigateToProfile: (String) -> Unit,
 ) {
     var state by remember { mutableStateOf(CLOSED) }
 
@@ -167,6 +172,7 @@ private fun PostDetailContent(
             isFollow = isFollow,
             onClickFollow = onClickFollow,
             onClickTag = { state = TAG },
+            navigateToProfile = navigateToProfile,
         )
 
         // 게시물 이미지
@@ -203,6 +209,7 @@ private fun PostDetailContent(
         changeState = { state = it },
         onDelete = deletePost,
         reportPost = reportPost,
+        navigateToProfile = navigateToProfile,
     )
 }
 
@@ -213,6 +220,7 @@ private fun ProfileAndFollowButton(
     isFollow: Boolean?,
     onClickFollow: () -> Unit,
     onClickTag: () -> Unit,
+    navigateToProfile: (String) -> Unit,
 ) {
     Row(
         modifier = modifier
@@ -229,7 +237,7 @@ private fun ProfileAndFollowButton(
                 modifier = Modifier.size(50.dp),
                 imageUrl = postDetail.ownerProfileImage,
                 contentDescription = "profile image",
-                onClick = { /* owner 프로필로 이동 */ },
+                onClick = { navigateToProfile(postDetail.ownerHandle) },
             )
 
             Column(
@@ -248,7 +256,7 @@ private fun ProfileAndFollowButton(
                 Text(
                     text = postDetail.ownerHandle + "님이 포착",
                     style = PochakTextStyle.body4,
-                    modifier = Modifier.noRippleClickable { /* owner 프로필로 이동 */ }
+                    modifier = Modifier.noRippleClickable { navigateToProfile(postDetail.ownerHandle) }
                 )
             }
         }
