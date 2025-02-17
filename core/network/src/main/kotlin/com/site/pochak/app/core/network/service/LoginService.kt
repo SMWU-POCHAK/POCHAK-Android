@@ -4,6 +4,7 @@ import com.site.pochak.app.core.network.NoAuth
 import com.site.pochak.app.core.network.model.NetworkLoginInfo
 import com.site.pochak.app.core.network.model.NetworkResponse
 import okhttp3.MultipartBody
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.Multipart
 import retrofit2.http.POST
@@ -45,7 +46,7 @@ interface LoginService {
     @GET(value = "api/v2/logout")
     suspend fun logout(): NetworkResponse<Unit>
 
-    @GET(value = "api/v2/signout")
+    @DELETE(value = "api/v2/signout")
     suspend fun signout(): NetworkResponse<Unit>
 
 }
