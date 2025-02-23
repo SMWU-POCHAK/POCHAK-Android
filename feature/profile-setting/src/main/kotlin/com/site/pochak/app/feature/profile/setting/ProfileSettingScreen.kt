@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
@@ -39,7 +40,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -60,11 +60,16 @@ import com.site.pochak.app.core.data.uriToFile
 import com.site.pochak.app.core.designsystem.component.BackButton
 import com.site.pochak.app.core.designsystem.component.HorizontalPadding
 import com.site.pochak.app.core.designsystem.component.PochakAlertDialog
+import com.site.pochak.app.core.designsystem.component.PochakTextStyle
 import com.site.pochak.app.core.designsystem.component.PochakTopAppBar
+import com.site.pochak.app.core.designsystem.icon.PochakIcons
+import com.site.pochak.app.core.designsystem.theme.ErrorColor
 import com.site.pochak.app.core.designsystem.theme.Gray01
 import com.site.pochak.app.core.designsystem.theme.Gray03
 import com.site.pochak.app.core.designsystem.theme.Gray04
+import com.site.pochak.app.core.designsystem.theme.PositiveColor
 import com.site.pochak.app.core.designsystem.theme.Yellow00
+import kotlinx.coroutines.delay
 import java.io.File
 
 private const val TAG = "ProfileSettingScreen"
@@ -76,18 +81,23 @@ fun ProfileSettingRoute(
     onBack: () -> Unit,
     viewModel: ProfileSettingViewModel = hiltViewModel(),
 ) {
-    val profileSettingUiState by viewModel.profileSettingUiState.collectAsStateWithLifecycle()
-    val checkHandleUiState by viewModel.checkHandleUiState.collectAsStateWithLifecycle()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val checkHandleState by viewModel.checkHandleState.collectAsStateWithLifecycle()
+    val signUpState by viewModel.signUpState.collectAsStateWithLifecycle()
+    val updateProfileState by viewModel.updateProfileState.collectAsStateWithLifecycle()
 
     ProfileSettingScreen(
         modifier = modifier,
         navigateToHome = navigateToHome,
         onBack = onBack,
-        checkHandleUiState = checkHandleUiState,
+        uiState = uiState,
+        checkHandleState = checkHandleState,
         checkHandle = viewModel::checkHandle,
-        resetCheckHandle = viewModel::resetCheckHandleUiState,
-        profileSettingUiState = profileSettingUiState,
-        onUpdateProfile = viewModel::updateProfile,
+        resetCheckHandle = viewModel::resetCheckHandleState,
+        signUp = viewModel::signUp,
+        signUpState = signUpState,
+        updateProfile = viewModel::updateProfile,
+        updateProfileState = updateProfileState,
     )
 }
 
@@ -96,25 +106,20 @@ internal fun ProfileSettingScreen(
     modifier: Modifier = Modifier,
     navigateToHome: () -> Unit,
     onBack: () -> Unit,
-    checkHandleUiState: CheckHandleUiState,
+    uiState: ProfileSettingUiState,
+    checkHandleState: CheckHandleState,
     checkHandle: (String) -> Unit,
     resetCheckHandle: () -> Unit,
-    profileSettingUiState: ProfileSettingUiState,
-    onUpdateProfile: (File, String, String, String) -> Unit,
+    signUp: (File, String, String, String) -> Unit,
+    signUpState: SignUpState,
+    updateProfile: (File, String, String, String) -> Unit,
+    updateProfileState: UpdateProfileState
 ) {
     var backPressed by remember { mutableStateOf(false) }
 
     BackHandler {
-        backPressed = true
-    }
-
-    LaunchedEffect(profileSettingUiState) {
-        when (profileSettingUiState) {
-            ProfileSettingUiState.Success -> navigateToHome()
-            is ProfileSettingUiState.Error ->
-                Log.e(TAG, "ProfileSettingUiState.Error: ${profileSettingUiState.message}")
-
-            else -> Unit
+        if (uiState !is ProfileSettingUiState.Error) {
+            backPressed = true
         }
     }
 
@@ -122,21 +127,52 @@ internal fun ProfileSettingScreen(
         modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.Center,
     ) {
-        if (
-            checkHandleUiState is CheckHandleUiState.Loading ||
-            profileSettingUiState is ProfileSettingUiState.Loading
-        ) {
-            CircularProgressIndicator()
+        when (uiState) {
+            is ProfileSettingUiState.Loading -> {
+                CircularProgressIndicator()
+            }
+
+            is ProfileSettingUiState.Error -> {
+                onBack()
+            }
+
+            else -> {
+                ProfileSettingContent(
+                    modifier = modifier,
+                    onBack = onBack,
+                    uiState = uiState,
+                    checkHandleState = checkHandleState,
+                    checkHandle = checkHandle,
+                    resetCheckHandle = resetCheckHandle,
+                    signUp = signUp,
+                    updateProfile = updateProfile,
+                )
+            }
         }
 
-        ProfileSettingContent(
-            modifier = modifier,
-            onBackPressed = { backPressed = true },
-            checkHandleUiState = checkHandleUiState,
-            checkHandle = checkHandle,
-            resetCheckHandle = resetCheckHandle,
-            onUpdateProfile = onUpdateProfile,
-        )
+        when (signUpState) {
+            is SignUpState.Loading -> {
+                CircularProgressIndicator()
+            }
+
+            is SignUpState.Success -> {
+                navigateToHome()
+            }
+
+            else -> Unit
+        }
+
+        when (updateProfileState) {
+            is UpdateProfileState.Loading -> {
+                CircularProgressIndicator()
+            }
+
+            is UpdateProfileState.Success -> {
+                onBack()
+            }
+
+            else -> Unit
+        }
 
         if (backPressed) {
             PochakAlertDialog(
@@ -158,29 +194,34 @@ internal fun ProfileSettingScreen(
 @Composable
 private fun ProfileSettingContent(
     modifier: Modifier = Modifier,
-    onBackPressed: () -> Unit,
-    checkHandleUiState: CheckHandleUiState,
+    onBack: () -> Unit,
+    uiState: ProfileSettingUiState,
+    checkHandleState: CheckHandleState,
     checkHandle: (String) -> Unit,
     resetCheckHandle: () -> Unit,
-    onUpdateProfile: (File, String, String, String) -> Unit,
+    signUp: (File, String, String, String) -> Unit,
+    updateProfile: (File, String, String, String) -> Unit,
 ) {
     val context = LocalContext.current
     val scrollState = rememberScrollState()
 
-    var name by rememberSaveable { mutableStateOf("") }
-    var handle by rememberSaveable { mutableStateOf("") }
-    var message by rememberSaveable { mutableStateOf("") }
-    var profileUri by rememberSaveable { mutableStateOf<Uri?>(null) }
-
-    val profileInputsState by remember {
-        derivedStateOf { listOf(name, handle, message, profileUri) }
+    val isUpdateProfile = uiState is ProfileSettingUiState.UpdateProfile
+    val profileInfo = if (uiState is ProfileSettingUiState.UpdateProfile) {
+        uiState.profileInfo
+    } else {
+        null
     }
+
+    var name by rememberSaveable { mutableStateOf(profileInfo?.name ?: "") }
+    var handle by rememberSaveable { mutableStateOf(profileInfo?.handle ?: "") }
+    var message by rememberSaveable { mutableStateOf(profileInfo?.message ?: "") }
+    var profileImage by rememberSaveable { mutableStateOf(profileInfo?.profileImage) }
 
     val takePhotoLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
-            result.data?.data?.let { profileUri = it } ?: run {
+            result.data?.data?.let { profileImage = it.toString() } ?: run {
                 Log.e(TAG, "Profile image uri is null")
             }
         } else if (result.resultCode != Activity.RESULT_CANCELED) {
@@ -202,19 +243,15 @@ private fun ProfileSettingContent(
     var actionEnabled by remember { mutableStateOf(false) }
 
     // 입력값이 모두 채워져 있고, 닉네임 중복 체크가 성공한 경우에만 완료 버튼 활성화
-    LaunchedEffect(profileInputsState, checkHandleUiState) {
-        actionEnabled = checkHandleUiState is CheckHandleUiState.Checked &&
-                profileInputsState.all {
-                    when (it) {
-                        is String -> it.isNotEmpty()
-                        else -> it != null
-                    }
-                }
+    LaunchedEffect(name, message, profileImage, checkHandleState) {
+        actionEnabled = name.isNotEmpty() && message.isNotEmpty() && profileImage != null &&
+                (isUpdateProfile || checkHandleState is CheckHandleState.Success)
     }
 
-    LaunchedEffect(checkHandleUiState) {
-        if (checkHandleUiState is CheckHandleUiState.Error) {
-            Toast.makeText(context, checkHandleUiState.message, Toast.LENGTH_SHORT).show()
+    // 중복 체크 에러 메시지
+    LaunchedEffect(checkHandleState) {
+        if (checkHandleState is CheckHandleState.Error) {
+            Toast.makeText(context, checkHandleState.message, Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -230,13 +267,18 @@ private fun ProfileSettingContent(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         PochakTopAppBar(
-            leftContent = { BackButton(onClick = onBackPressed) },
+            leftContent = { BackButton(onClick = onBack) },
             centerContent = { Text(text = stringResource(R.string.feature_profile_setting_title)) },
             rightContent = {
                 IconButton(onClick = {
                     if (actionEnabled) {
-                        val file = uriToFile(profileUri!!, context)
-                        onUpdateProfile(file, name, handle, message)
+                        val file = uriToFile(Uri.parse(profileImage), context)
+
+                        if (isUpdateProfile) {
+                            updateProfile(file, name, handle, message)
+                        } else {
+                            signUp(file, name, handle, message)
+                        }
                     }
                 }) {
                     Text(
@@ -253,7 +295,8 @@ private fun ProfileSettingContent(
                 .weight(1f)
                 .padding(horizontal = HorizontalPadding)
                 // 키보드가 올라와서 입력 필드가 가려지는 경우, 스크롤 가능하도록
-                .verticalScroll(scrollState),
+                .verticalScroll(scrollState)
+                .imePadding(),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Spacer(modifier = Modifier.height(40.dp))
@@ -261,8 +304,8 @@ private fun ProfileSettingContent(
             // 프로필 이미지
             Image(
                 painter =
-                if (profileUri == null) painterResource(id = R.drawable.feature_profile_setting_add_profile)
-                else rememberAsyncImagePainter(profileUri),
+                if (profileImage == null) painterResource(id = R.drawable.feature_profile_setting_add_profile)
+                else rememberAsyncImagePainter(profileImage),
                 contentDescription = "Profile Image",
                 modifier = Modifier
                     .size(116.dp)
@@ -281,6 +324,7 @@ private fun ProfileSettingContent(
                 regex = Regex(".{0,15}$"),
                 value = name,
                 onValueChange = { name = it },
+                isUpdateProfile = isUpdateProfile,
             )
 
             // 아이디
@@ -291,11 +335,13 @@ private fun ProfileSettingContent(
                 regex = Regex("^[a-zA-Z0-9._]{0,15}\$"),
                 value = handle,
                 onValueChange = { handle = it },
+                isUpdateProfile = isUpdateProfile,
+                enabled = !isUpdateProfile,
             ) {
                 // 아이디 중복 체크 버튼
                 Image(
                     painter = painterResource(
-                        if (checkHandleUiState is CheckHandleUiState.Checked) {
+                        if (checkHandleState is CheckHandleState.Success) {
                             R.drawable.feature_profile_setting_handle_checked
                         } else {
                             R.drawable.feature_profile_setting_handle_unchecked
@@ -305,7 +351,7 @@ private fun ProfileSettingContent(
                     modifier = Modifier
                         .clip(RoundedCornerShape(12.dp))
                         .clickable {
-                            if (checkHandleUiState is CheckHandleUiState.UnChecked && handle.isNotEmpty()) {
+                            if (checkHandleState is CheckHandleState.UnChecked && handle.isNotEmpty()) {
                                 checkHandle(handle)
                             }
                         }
@@ -321,6 +367,7 @@ private fun ProfileSettingContent(
                 value = message,
                 onValueChange = { message = it },
                 singleLine = false,
+                isUpdateProfile = isUpdateProfile,
             )
         }
     }
@@ -335,9 +382,21 @@ private fun ProfileInputField(
     regex: Regex,
     value: String,
     onValueChange: (String) -> Unit,
+    isUpdateProfile: Boolean,
+    enabled: Boolean = true,
     singleLine: Boolean = true,
     content: @Composable () -> Unit = {},
 ) {
+    var isValidate by remember { mutableStateOf<Boolean?>(null) }
+
+    // 입력값 오류 체크 후, 0.5초 후에 다시 체크
+    LaunchedEffect(isValidate) {
+        if (isValidate == false) {
+            delay(500L)
+            isValidate = value.isNotEmpty()
+        }
+    }
+
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -351,45 +410,86 @@ private fun ProfileInputField(
             Text(
                 text = stringResource(title),
                 style = MaterialTheme.typography.titleSmall,
-                modifier = Modifier.weight(3f),
+                modifier = Modifier.weight(2f),
             )
 
             Row(
-                modifier = Modifier.weight(7f),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(8f),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Box(modifier = Modifier.weight(1f)) {
                     BasicTextField(
                         value = value,
                         onValueChange = {
-                            if (regex.matches(it) && it.firstOrNull() != ' ') {
-                                onValueChange(it)
+                            isValidate = (regex.matches(it) && it.firstOrNull() != ' ')
+                                .also { isValid ->
+                                    if (isValid) {
+                                        onValueChange(it)
+                                    }
+                                }
+
+                            if (it.isEmpty()) {
+                                isValidate = null
                             }
                         },
                         modifier = Modifier.fillMaxWidth(),
-                        textStyle = MaterialTheme.typography.bodyLarge,
+                        textStyle = PochakTextStyle.body2.copy(
+                            color = if (enabled) MaterialTheme.colorScheme.onSurface else Gray04,
+                        ),
                         singleLine = singleLine,
+                        enabled = enabled,
                     )
 
+                    // 입력값이 없을 경우, hint 표시
                     if (value.isEmpty()) {
                         Text(
                             text = stringResource(hint),
-                            style = MaterialTheme.typography.bodyLarge,
+                            style = PochakTextStyle.body2,
                             color = Gray03,
                         )
                     }
                 }
 
-                content()
+                if (enabled) {
+                    content()
+                }
             }
         }
 
-        // 입력 포맷 안내문
-        Text(
-            text = stringResource(regexText),
-            style = MaterialTheme.typography.bodyMedium,
-            color = Gray04,
-        )
+        // 입력값이 없거나, 입력값이 유효하지 않을 경우, 오류 메시지 표시
+        Row(
+            modifier = modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (!isUpdateProfile) {
+                if (isValidate == true) {
+                    Image(
+                        painter = painterResource(PochakIcons.Checked),
+                        contentDescription = "Check",
+                        modifier = Modifier
+                            .weight(2f)
+                            .padding(end = 4.dp),
+                        alignment = Alignment.CenterEnd,
+                    )
+                } else {
+                    Spacer(modifier = Modifier.weight(2f))
+                }
+
+                // 입력 포맷 안내문
+                Text(
+                    modifier = Modifier.weight(8f),
+                    text = stringResource(regexText),
+                    style = PochakTextStyle.body4,
+                    color = when (isValidate) {
+                        null -> Gray04
+                        true -> PositiveColor
+                        false -> ErrorColor
+                    }
+                )
+            }
+        }
 
         HorizontalDivider(color = Gray01)
     }

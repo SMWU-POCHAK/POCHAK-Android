@@ -20,9 +20,15 @@ import com.site.pochak.app.feature.post.detail.navigation.navigateToPostDetail
 import com.site.pochak.app.feature.post.detail.navigation.postDetailScreen
 import com.site.pochak.app.feature.post.navigation.navigateToSearchHistory
 import com.site.pochak.app.feature.post.navigation.searchHistoryScreen
-import com.site.pochak.app.feature.profile.navigation.profileScreen
+import com.site.pochak.app.feature.profile.navigation.navigateToFollow
+import com.site.pochak.app.feature.profile.navigation.navigateToProfile
+import com.site.pochak.app.feature.profile.navigation.profileGraph
 import com.site.pochak.app.feature.profile.setting.navigation.navigateToProfileSetting
 import com.site.pochak.app.feature.profile.setting.navigation.profileSettingScreen
+import com.site.pochak.app.feature.setting.navigation.BlockUserRoute
+import com.site.pochak.app.feature.setting.navigation.navigateToBlockUser
+import com.site.pochak.app.feature.setting.navigation.navigateToSetting
+import com.site.pochak.app.feature.setting.navigation.settingGraph
 import com.site.pochak.app.feature.splash.navigation.SplashRoute
 import com.site.pochak.app.feature.splash.navigation.splashScreen
 import com.site.pochak.app.navigation.TopLevelDestination.HOME
@@ -75,7 +81,10 @@ fun PochakNavHost(
         )
         searchHistoryScreen()
         postDetailScreen(
-            onBack = { navController.popBackStack() }
+            onBack = { navController.popBackStack() },
+            navigateToProfile = { handle ->
+                navController.navigateToProfile(handle = handle)
+            }
         )
         cameraScreen(
             navigateToUpload = navController::navigateToUpload
@@ -92,13 +101,51 @@ fun PochakNavHost(
         alarmScreen(
             navigateToPostDetail = navController::navigateToPostDetail
         )
-        profileScreen()
+        profileGraph(
+            onBack = { navController.popBackStack() },
+            navigateToPostDetail = { postId ->
+                navController.navigateToPostDetail(postId)
+            },
+            navigateToProfileSetting = { profile ->
+                navController.navigateToProfileSetting(
+                    profileInfoJson = profile
+                )
+            },
+            navigateToFollow = { handle, followerCount, followingCount, selectedTab ->
+                navController.navigateToFollow(
+                    handle = handle,
+                    followerCount = followerCount,
+                    followingCount = followingCount,
+                    selectedTab = selectedTab
+                )
+            },
+            navigateToProfile = { handle ->
+                navController.navigateToProfile(handle = handle)
+            },
+            navigateToSetting = {
+                navController.navigateToSetting()
+            }
+        )
         profileSettingScreen(
             navigateToHome = {
                 appState.navigateToTopLevelDestination(HOME, inclusive = true)
                 navController.graph.setStartDestination(HomeRoute)
             },
             onBack = { navController.popBackStack() },
+        )
+        settingGraph(
+            onBack = { navController.popBackStack() },
+            navigateToLogin = {
+                navController.navigateToLogin(
+                    navOptions {
+                        popUpTo(HomeRoute) {
+                            inclusive = true
+                        }
+                    }
+                )
+                navController.graph.setStartDestination(LoginRoute)
+            },
+            navigateToBlockUser = navController::navigateToBlockUser
         )
     }
 }

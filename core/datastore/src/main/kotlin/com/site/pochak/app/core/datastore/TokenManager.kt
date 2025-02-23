@@ -82,6 +82,14 @@ class TokenManager @Inject constructor(
         }
     }
 
+    suspend fun resetUserData() {
+        dataStore.edit {
+            it.remove(ACCESS_TOKEN_KEY)
+            it.remove(REFRESH_TOKEN_KEY)
+            it.remove(USER_HANDLE_KEY)
+        }
+    }
+
     // FCM 토큰 전송 여부 관련 메서드
     fun isFcmTokenSent(): Flow<Boolean> {
         return dataStore.data.map {

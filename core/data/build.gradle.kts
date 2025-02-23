@@ -14,4 +14,6 @@ dependencies {
     implementation(libs.okhttp.logging)
     implementation(libs.hilt.android)
     implementation(libs.kotlinx.serialization.json)
+    api(libs.androidx.paging.runtime)
+    api(libs.androidx.paging.compose)
 }

@@ -8,13 +8,15 @@ import com.site.pochak.app.feature.profile.setting.ProfileSettingRoute
 import kotlinx.serialization.Serializable
 
 @Serializable data class ProfileSettingRoute(
-    val loginInfoJson: String
+    val loginInfoJson: String?,
+    val profileInfoJson: String?,
 )
 
 fun NavController.navigateToProfileSetting(
-    loginInfoJson: String,
+    loginInfoJson: String? = null,
+    profileInfoJson: String? = null,
     navOptions: NavOptions? = null
-) = navigate(ProfileSettingRoute(loginInfoJson), navOptions)
+) = navigate(ProfileSettingRoute(loginInfoJson, profileInfoJson), navOptions)
 
 fun NavGraphBuilder.profileSettingScreen(
     navigateToHome: () -> Unit,

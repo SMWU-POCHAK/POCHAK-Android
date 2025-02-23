@@ -8,13 +8,23 @@ import androidx.navigation.toRoute
 import com.site.pochak.app.core.data.repository.LoginRepository
 import com.site.pochak.app.core.data.repository.ProfileRepository
 import com.site.pochak.app.core.datastore.TokenManager
+import com.site.pochak.app.core.domain.CheckHandleUseCase
+import com.site.pochak.app.core.domain.SignUpUseCase
+import com.site.pochak.app.core.domain.UpdateProfileUseCase
 import com.site.pochak.app.core.network.model.NetworkLoginInfo
+import com.site.pochak.app.core.network.model.NetworkProfile
 import com.site.pochak.app.core.network.utils.ApiResult
 import com.site.pochak.app.feature.profile.setting.navigation.ProfileSettingRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import java.io.File
@@ -25,103 +35,150 @@ private val TAG = "ProfileSettingViewModel"
 @HiltViewModel
 class ProfileSettingViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    private val loginRepository: LoginRepository,
-    private val profileRepository: ProfileRepository,
-    private val tokenManager: TokenManager
+    private val checkHandleUseCase: CheckHandleUseCase,
+    private val signUpUseCase: SignUpUseCase,
+    private val updateProfileUseCase: UpdateProfileUseCase,
 ) : ViewModel() {
-
     private val loginInfoKey = "loginInfo"
-    private val CHECK_HANDLE_SUCCESS_CODE = "MEMBER2001"
-
+    private val profileInfoKey = "profileInfo"
 
     private val route = savedStateHandle.toRoute<ProfileSettingRoute>()
     private val loginInfo = savedStateHandle.getStateFlow(
         key = loginInfoKey,
-        initialValue = Json.decodeFromString(NetworkLoginInfo.serializer(), route.loginInfoJson)
-    ).value
+        initialValue = route.loginInfoJson
+    )
+    private val profileInfo = savedStateHandle.getStateFlow(
+        key = profileInfoKey,
+        initialValue = route.profileInfoJson
+    )
 
-    private val _profileSettingUiState = MutableStateFlow<ProfileSettingUiState>(ProfileSettingUiState.Idle)
-    val profileSettingUiState: StateFlow<ProfileSettingUiState> = _profileSettingUiState.asStateFlow()
+    val uiState: StateFlow<ProfileSettingUiState> = combine(
+        loginInfo,
+        profileInfo
+    ) { loginInfo, profileInfo ->
+        if (loginInfo != null) {
+            ProfileSettingUiState.SignUp(
+                Json.decodeFromString(
+                    NetworkLoginInfo.serializer(),
+                    loginInfo
+                )
+            )
+        } else if (profileInfo != null) {
+            ProfileSettingUiState.UpdateProfile(
+                Json.decodeFromString(
+                    NetworkProfile.serializer(),
+                    profileInfo
+                )
+            )
+        } else {
+            ProfileSettingUiState.Error
+        }
+    }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = ProfileSettingUiState.Loading
+        )
 
-    fun updateProfile(profileFile: File, name: String, handle: String, message: String) {
+    private val _checkHandleUiState =
+        MutableStateFlow<CheckHandleState>(CheckHandleState.UnChecked)
+    val checkHandleState: StateFlow<CheckHandleState> = _checkHandleUiState.asStateFlow()
+
+    private val _signUpState = MutableStateFlow<SignUpState>(SignUpState.Idle)
+    val signUpState: StateFlow<SignUpState> = _signUpState.asStateFlow()
+
+    private val _updateProfileState = MutableStateFlow<UpdateProfileState>(UpdateProfileState.Idle)
+    val updateProfileState: StateFlow<UpdateProfileState> = _updateProfileState.asStateFlow()
+
+    fun checkHandle(handle: String) {
         viewModelScope.launch {
-            _profileSettingUiState.value = ProfileSettingUiState.Loading
-            _profileSettingUiState.value = when (val apiResult = loginRepository.signUp(
-                profileImage = profileFile,
-                name = name,
-                email = loginInfo.email,
-                handle = handle,
-                message = message,
-                socialId = loginInfo.socialId,
-                socialType = loginInfo.socialType
-            )) {
-                is ApiResult.Success<*> -> {
-                    val result = apiResult.result as NetworkLoginInfo
-
-                    if (result.accessToken == null || result.refreshToken == null || result.handle == null) {
-                        Log.e(
-                            TAG,
-                            "Server Response Error: /google/login response is missing AccessToken, RefreshToken, Handle"
-                        )
-                        ProfileSettingUiState.Error("AccessToken, RefreshToken, Handle is null")
+            _checkHandleUiState.value = CheckHandleState.Loading
+            checkHandleUseCase.invoke(handle)
+                .onStart { _checkHandleUiState.value = CheckHandleState.Loading }
+                .collect {
+                    _checkHandleUiState.value = if (it) {
+                        CheckHandleState.Success
                     } else {
-                        // TokenManager에 AccessToken, RefreshToken, Handle 저장
-                        tokenManager.saveUserData(
-                            result.accessToken!!,
-                            result.refreshToken!!,
-                            result.handle!!
-                        )
-
-                        ProfileSettingUiState.Success
+                        CheckHandleState.Error("중복되는 아이디입니다.")
                     }
                 }
+        }
+    }
 
-                is ApiResult.Error -> ProfileSettingUiState.Error("${apiResult.code}: ${apiResult.message}")
+    fun resetCheckHandleState() {
+        _checkHandleUiState.value = CheckHandleState.UnChecked
+    }
 
-                else -> ProfileSettingUiState.Error("Unknown Error")
+    fun signUp(profileImage: File, name: String, handle: String, message: String) {
+        viewModelScope.launch {
+            val uiState = uiState.first()
+            if (uiState is ProfileSettingUiState.SignUp) {
+                signUpUseCase.invoke(
+                    profileImage = profileImage,
+                    name = name,
+                    handle = handle,
+                    message = message,
+                    loginInfo = uiState.loginInfo
+                )
+                    .onStart { _signUpState.value = SignUpState.Loading }
+                    .collect {
+                        _signUpState.value = if (it) {
+                            SignUpState.Success
+                        } else {
+                            SignUpState.Error
+                        }
+                    }
             }
         }
     }
 
-    private val _checkHandleUiState =
-        MutableStateFlow<CheckHandleUiState>(CheckHandleUiState.UnChecked)
-    val checkHandleUiState: StateFlow<CheckHandleUiState> = _checkHandleUiState.asStateFlow()
-
-    fun checkHandle(handle: String) {
+    fun updateProfile(profileImage: File, name: String, handle: String, message: String) {
         viewModelScope.launch {
-            _checkHandleUiState.value = CheckHandleUiState.Loading
-            _checkHandleUiState.value =
-                when (val apiResult = profileRepository.checkDuplicateHandle(handle)) {
-                    is ApiResult.SuccessNoResult -> {
-                        if (apiResult.code == CHECK_HANDLE_SUCCESS_CODE) {
-                            CheckHandleUiState.Checked
+            val uiState = uiState.first()
+            if (uiState is ProfileSettingUiState.UpdateProfile) {
+                updateProfileUseCase.invoke(
+                    profileImage = profileImage,
+                    name = name,
+                    handle = handle,
+                    message = message
+                )
+                    .onStart { _updateProfileState.value = UpdateProfileState.Loading }
+                    .collect {
+                        _updateProfileState.value = if (it) {
+                            UpdateProfileState.Success
                         } else {
-                            CheckHandleUiState.Error("중복되는 아이디입니다.")
+                            UpdateProfileState.Error
                         }
                     }
-
-                    is ApiResult.Error -> CheckHandleUiState.Error("${apiResult.code}: ${apiResult.message}")
-
-                    else -> CheckHandleUiState.Error("Unknown Error")
-                }
+            }
         }
     }
-
-    fun resetCheckHandleUiState() {
-        _checkHandleUiState.value = CheckHandleUiState.UnChecked
-    }
 }
 
-sealed class CheckHandleUiState {
-    data object UnChecked : CheckHandleUiState()
-    data object Loading : CheckHandleUiState()
-    data object Checked : CheckHandleUiState()
-    data class Error(val message: String) : CheckHandleUiState()
+sealed interface ProfileSettingUiState {
+    data object Loading : ProfileSettingUiState
+    data class SignUp(val loginInfo: NetworkLoginInfo) : ProfileSettingUiState
+    data class UpdateProfile(val profileInfo: NetworkProfile) : ProfileSettingUiState
+    data object Error : ProfileSettingUiState
 }
 
-sealed class ProfileSettingUiState {
-    data object Idle : ProfileSettingUiState()
-    data object Loading : ProfileSettingUiState()
-    data object Success : ProfileSettingUiState()
-    data class Error(val message: String) : ProfileSettingUiState()
+sealed interface CheckHandleState {
+    data object UnChecked : CheckHandleState
+    data object Loading : CheckHandleState
+    data object Success : CheckHandleState
+    data class Error(val message: String) : CheckHandleState
+}
+
+sealed interface SignUpState {
+    data object Idle : SignUpState
+    data object Loading : SignUpState
+    data object Success : SignUpState
+    data object Error : SignUpState
+}
+
+sealed interface UpdateProfileState {
+    data object Idle : UpdateProfileState
+    data object Loading : UpdateProfileState
+    data object Success : UpdateProfileState
+    data object Error : UpdateProfileState
 }
