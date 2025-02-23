@@ -14,8 +14,10 @@ import com.site.pochak.app.core.network.model.NetworkPostPreview
 import com.site.pochak.app.core.network.model.toModel
 import com.site.pochak.app.core.network.utils.ApiResult
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -48,32 +50,14 @@ class AlarmViewModel @Inject constructor(
         postPageManager.loadPage(isRefresh)
     }
 
-    private val _selectedAlarmId = mutableStateOf<Long?>(null) // 선택된 알람 ID 관리
-    val selectedAlarmId: State<Long?> = _selectedAlarmId
-
-    fun selectAlarm(alarmId: Long) {
-        _selectedAlarmId.value = alarmId
-    }
-
-    fun clearSelectedAlarm() {
-        _selectedAlarmId.value = null
-    }
-
-    private val _checkAlarmUiState = mutableStateOf<AlarmUiState>(AlarmUiState.Loading)
-    val checkAlarmUiState: State<AlarmUiState> = _checkAlarmUiState
-
     // 알람 확인 처리 함수
     fun checkAlarm(alarmId: Int) {
-        _checkAlarmUiState.value = AlarmUiState.Loading
-        Log.d(TAG, "checkAlarm: State set to Loading")
         viewModelScope.launch {
             val result = alarmRepository.checkAlarm(alarmId)
-            _checkAlarmUiState.value = if (result is ApiResult.SuccessNoResult) {
+            if (result is ApiResult.SuccessNoResult) {
                 Log.d(TAG, "checkAlarm: State set to Success")
-                AlarmUiState.Success
             } else {
                 Log.e(TAG, "checkAlarm: State set to Error")
-                AlarmUiState.Error
             }
         }
     }
@@ -98,8 +82,27 @@ class AlarmViewModel @Inject constructor(
         }
     }
 
+    private val _selectedTagId = MutableStateFlow<Long?>(null)
+    val selectedTagId = _selectedTagId.asStateFlow()
+
+    // 선택된 태그 알림을 가져오는 함수
+    fun selectTagAlarm(tagId: Long?) {
+        _selectedTagId.value = tagId
+    }
+
+    // 선택된 태그 알림 초기화 함수
+    fun clearSelectedTagAlarm() {
+        _selectedTagId.value = null
+        _postPreviewUiState.value = PostPreviewUiState.Loading
+    }
+
     private val _approveTagUiState = mutableStateOf<AlarmUiState>(AlarmUiState.Loading)
     val approveTagUiState: State<AlarmUiState> = _approveTagUiState
+
+    // approveTagUiState 초기화
+    fun clearApproveTagUiState() {
+        _approveTagUiState.value = AlarmUiState.Loading
+    }
 
     // 태그 수락/거절 처리 함수
     fun postApproveTag(tagId: Int, isAccept: Boolean){
@@ -107,7 +110,7 @@ class AlarmViewModel @Inject constructor(
 
         viewModelScope.launch {
             val result = tagRepository.approveTag(tagId, isAccept)
-            _checkAlarmUiState.value = if(result is ApiResult.SuccessNoResult){
+            _approveTagUiState.value = if(result is ApiResult.SuccessNoResult){
                 Log.d(TAG, "postApproveTag: Success")
                 AlarmUiState.Success
             } else {
@@ -116,7 +119,6 @@ class AlarmViewModel @Inject constructor(
             }
        }
    }
-
 }
 
 sealed interface AlarmUiState {

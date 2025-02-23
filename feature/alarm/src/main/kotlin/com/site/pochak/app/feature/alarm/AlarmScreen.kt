@@ -30,6 +30,8 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -120,8 +122,15 @@ fun AlarmContent(
     onLoadPage: (Boolean) -> Unit,
     onPostDetailClick: (Int) -> Unit,
 ) {
-    val selectedAlarmId by viewModel.selectedAlarmId
+    val selectedTagId by viewModel.selectedTagId.collectAsState()
     val postPreviewUiState by viewModel.postPreviewUiState
+    var showBottomSheet : Boolean by rememberSaveable { mutableStateOf(false) }
+
+    LaunchedEffect(selectedTagId) {
+        if (selectedTagId != null) {
+            showBottomSheet = true
+        }
+    }
 
     RefreshableLazyVerticalGrid(
         modifier = modifier
@@ -138,7 +147,7 @@ fun AlarmContent(
                 modifier = Modifier,
                 alarm = alarm,
                 viewModel = viewModel,
-                onPostDetailClick = onPostDetailClick
+                onPostDetailClick = onPostDetailClick,
             )
         }
 
@@ -158,14 +167,18 @@ fun AlarmContent(
         }
     }
 
-    if (selectedAlarmId != null && postPreviewUiState is PostPreviewUiState.Success) {
+    if (postPreviewUiState is PostPreviewUiState.Success) {
         val postPreview = (postPreviewUiState as PostPreviewUiState.Success).postPreview
         TagApprovalBottomSheet(
-            showBottomSheet = true,
-            onDismiss = { viewModel.clearSelectedAlarm() },
+            showBottomSheet = showBottomSheet,
+            onDismiss = {
+                showBottomSheet = false
+                viewModel.clearSelectedTagAlarm()
+                viewModel.clearApproveTagUiState()
+            },
             postPreviewDetail = postPreview,
             viewModel = viewModel,
-            tagId = selectedAlarmId!!.toInt()
+            tagId = selectedTagId!!.toInt()
         )
     }
 }
@@ -181,7 +194,15 @@ fun AlarmItem(
 
     Column(
         modifier = modifier
-            .background(if ( isClicked || alarm.isChecked ) MaterialTheme.colorScheme.surface else Yellow01) // 클릭 여부에 따른 배경색 변경
+            .background(
+                if (alarm.alarmType == AlarmType.TAG_APPROVAL) {
+                    Yellow01
+                } else if (isClicked || alarm.isChecked) {
+                    MaterialTheme.colorScheme.surface
+                } else {
+                    Yellow01
+                }
+            )
             .padding(horizontal = 20.dp)
             .height(76.dp),
         verticalArrangement = Arrangement.Center
@@ -200,11 +221,11 @@ fun AlarmItem(
                 .fillMaxWidth()
                 .clickable {
                     isClicked = true
-                    viewModel.selectAlarm(alarm.alarmId) // 현재 알람 선택
                     viewModel.checkAlarm(alarm.alarmId.toInt()) // 알람 상태 확인
 
                     when (alarm.alarmType) {
                         AlarmType.TAG_APPROVAL -> {
+                            viewModel.selectTagAlarm(alarm.tagId) // 현재 알람 선택
                             viewModel.getPostPreview(alarm.alarmId) // 태그 미리보기 가져오기
                         }
                         AlarmType.FOLLOW -> {

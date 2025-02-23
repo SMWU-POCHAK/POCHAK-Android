@@ -26,7 +26,6 @@ import com.site.pochak.app.core.designsystem.component.CircleCropAsyncImage
 import com.site.pochak.app.core.designsystem.component.HorizontalPadding
 import com.site.pochak.app.core.designsystem.component.PochakTextStyle
 import com.site.pochak.app.core.designsystem.component.RoundedButton
-import com.site.pochak.app.core.designsystem.component.noRippleClickable
 import com.site.pochak.app.core.designsystem.theme.Gray03
 import com.site.pochak.app.core.network.model.NetworkPostPreview
 import kotlinx.coroutines.launch
@@ -44,7 +43,7 @@ fun TagApprovalBottomSheet(
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
-    val approveTagUiState by viewModel.approveTagUiState // ViewModel의 checkAlarmUiState 관찰
+    val approveTagUiState by viewModel.approveTagUiState
 
     fun hideSheet() {
         scope.launch { sheetState.hide() }
@@ -57,10 +56,11 @@ fun TagApprovalBottomSheet(
 
     LaunchedEffect(approveTagUiState) {
         if (approveTagUiState is AlarmUiState.Success) {
-            Log.d("TagApprovalBottomSheet", "Tag approval successful. Hiding sheet.")
+            Log.d(TAG, "Tag approval successful. Hiding sheet.")
+            viewModel.loadPage(true)
             hideSheet() // 성공 시 바텀시트 닫기
         } else if (approveTagUiState is AlarmUiState.Error) {
-            Log.e("TagApprovalBottomSheet", "Tag approval failed.")
+            Log.e(TAG, "Tag approval failed.")
         }
     }
 
@@ -73,7 +73,7 @@ fun TagApprovalBottomSheet(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = HorizontalPadding, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp) // Row와 AsyncImage 간 간격 추가
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Row(
                     modifier = Modifier
@@ -101,7 +101,7 @@ fun TagApprovalBottomSheet(
                                 text = postPreviewDetail.tagList.map { it.handle }.take(maxTagCount)
                                     .joinToString(" · ") { it + "님" } + if (postPreviewDetail.tagList.size > maxTagCount) "..." else "",
                                 style = PochakTextStyle.body1,
-                                overflow = TextOverflow.Ellipsis, // 태그 표시가 길 경우 텍스트 생략
+                                overflow = TextOverflow.Ellipsis,
                             )
 
                             Text(
