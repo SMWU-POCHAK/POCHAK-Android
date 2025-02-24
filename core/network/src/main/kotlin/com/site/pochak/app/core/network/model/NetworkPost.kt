@@ -35,6 +35,7 @@ data class NetworkPostDetail(
 @Serializable
 data class NetworkPostPreview(
     val ownerId: Int,
+    val ownerHandle: String,
     val ownerProfileImage: String,
     val tagList: List<NetworkTag>,
     val postImage: String

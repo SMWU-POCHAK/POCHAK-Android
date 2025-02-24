@@ -11,8 +11,12 @@ import kotlinx.serialization.Serializable
 
 fun NavController.navigateToAlarm(navOptions: NavOptions? = null) = navigate(AlarmRoute, navOptions)
 
-fun NavGraphBuilder.alarmScreen() {
+fun NavGraphBuilder.alarmScreen(
+    navigateToPostDetail: (Int) -> Unit,
+) {
     composable<AlarmRoute> {
-        AlarmRoute()
+        AlarmRoute(
+            navigateToPostDetail = navigateToPostDetail
+        )
     }
 }
