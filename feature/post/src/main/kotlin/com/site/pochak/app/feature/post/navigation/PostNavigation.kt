@@ -27,8 +27,11 @@ fun NavGraphBuilder.postScreen(
 }
 
 fun NavGraphBuilder.searchHistoryScreen(
+    navigateToProfile: (String) -> Unit
 ) {
     composable<SearchHistoryRoute> {
-        SearchHistoryRoute()
+        SearchHistoryRoute(
+            navigateToProfile = navigateToProfile
+        )
     }
 }
