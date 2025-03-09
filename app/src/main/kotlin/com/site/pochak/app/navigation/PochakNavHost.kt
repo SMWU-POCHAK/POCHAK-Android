@@ -103,7 +103,10 @@ fun PochakNavHost(
             }
         )
         alarmScreen(
-            navigateToPostDetail = navController::navigateToPostDetail
+            navigateToPostDetail = navController::navigateToPostDetail,
+            navigateToProfile = { handle ->
+                navController.navigateToProfile(handle = handle)
+            }
         )
         profileGraph(
             onBack = { navController.popBackStack() },
