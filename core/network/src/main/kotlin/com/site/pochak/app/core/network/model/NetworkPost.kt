@@ -26,6 +26,7 @@ data class NetworkPostDetail(
     val tagList: List<NetworkTag>,
     val isFollow: Boolean?,
     val postImage: String,
+    val allowedDate: String,
     val isLike: Boolean,
     val likeCount: Int,
     val caption: String,

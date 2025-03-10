@@ -36,13 +36,30 @@ data class BlockPageResponse(
 @Serializable
 data class CommentPageResponse(
     val parentCommentPageInfo: NetworkPageInfo,
-    val parentCommentList: List<NetworkCommentWithChild>,
+    val parentCommentList: List<ChildCommentPageResponse>,
     val loginMemberProfileImage: String,
-) : PageResponse<NetworkCommentWithChild> {
+) : PageResponse<ChildCommentPageResponse> {
     override val pageInfo: NetworkPageInfo
         get() = parentCommentPageInfo
-    override val data: List<NetworkCommentWithChild>
+    override val data: List<ChildCommentPageResponse>
         get() = parentCommentList
+}
+
+@Serializable
+data class ChildCommentPageResponse(
+    val commentId: Int,
+    val memberId: Int,
+    val profileImage: String,
+    val handle: String,
+    val createdDate: String?,
+    val content: String,
+    val childCommentPageInfo: NetworkPageInfo,
+    val childCommentList: MutableList<NetworkComment>
+) : PageResponse<NetworkComment> {
+    override val pageInfo: NetworkPageInfo
+        get() = childCommentPageInfo
+    override val data: List<NetworkComment>
+        get() = childCommentList
 }
 
 @Serializable

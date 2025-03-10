@@ -1,8 +1,8 @@
 package com.site.pochak.app.core.network.service
 
+import com.site.pochak.app.core.network.model.ChildCommentPageResponse
 import com.site.pochak.app.core.network.model.CommentPageResponse
 import com.site.pochak.app.core.network.model.NetworkCommentBody
-import com.site.pochak.app.core.network.model.NetworkCommentWithChild
 import com.site.pochak.app.core.network.model.NetworkResponse
 import retrofit2.http.Body
 import retrofit2.http.DELETE
@@ -31,15 +31,17 @@ interface CommentService {
     @GET(value = "api/v2/posts/{postId}/comments")
     suspend fun getComments(
         @Path(value = "postId") postId: Int,
-        @Query(value = "page") page: Int
+        @Query(value = "page") page: Int,
+        @Query(value = "sort") sort: String = "createdDate,asc"
     ): NetworkResponse<CommentPageResponse>
 
     @GET(value = "api/v2/posts/{postId}/comments/{commentId}")
     suspend fun getChildComments(
         @Path(value = "postId") postId: Int,
         @Path(value = "commentId") commentId: Int,
-        @Query(value = "page") page: Int
-    ): NetworkResponse<NetworkCommentWithChild>
+        @Query(value = "page") page: Int,
+        @Query(value = "sort") sort: String = "createdDate,asc"
+    ): NetworkResponse<ChildCommentPageResponse>
 
     @DELETE(value = "api/v2/posts/{postId}/comments")
     suspend fun deleteComment(

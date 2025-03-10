@@ -3,6 +3,8 @@ package com.site.pochak.app.core.designsystem.component
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 
@@ -19,5 +21,24 @@ fun PochakTopAppBar(
         navigationIcon = { leftContent() },
         title = { centerContent() },
         actions = { rightContent() }
+    )
+}
+
+@Composable
+fun PochakNavigationTopAppBar(
+    onBack: () -> Unit,
+    title: String = "",
+    rightContent: @Composable () -> Unit = {},
+    modifier: Modifier = Modifier,
+) {
+    PochakTopAppBar(
+        leftContent = { BackButton(onClick = onBack) },
+        centerContent = {
+            Text(
+                text = title,
+                style = PochakTextStyle.body0,
+            )
+        },
+        rightContent = rightContent,
     )
 }

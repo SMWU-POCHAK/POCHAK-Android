@@ -30,6 +30,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.paging.compose.LazyPagingItems
+import androidx.paging.compose.collectAsLazyPagingItems
 import com.site.pochak.app.core.designsystem.component.CircleCropAsyncImage
 import com.site.pochak.app.core.designsystem.component.HorizontalPadding
 import com.site.pochak.app.core.designsystem.component.PochakTextStyle
@@ -39,17 +41,17 @@ import com.site.pochak.app.core.designsystem.theme.Gray01
 import com.site.pochak.app.core.designsystem.theme.Gray03
 import com.site.pochak.app.core.designsystem.theme.Gray04
 import com.site.pochak.app.core.designsystem.theme.Gray05
-import com.site.pochak.app.core.network.model.NetworkCommentWithChild
+import com.site.pochak.app.core.network.model.ChildCommentPageResponse
+import com.site.pochak.app.core.ui.ElapsedTimeText
 
 @Composable
 internal fun CommentContent(
     modifier: Modifier = Modifier,
-    viewModel: CommentViewModel = hiltViewModel()
+    viewModel: CommentViewModel = hiltViewModel(),
 ) {
-    val commentList by viewModel.commentList.collectAsStateWithLifecycle()
-    val myProfileImageUrl = viewModel.myProfileImageUrl
-
-    var parentComment by rememberSaveable { mutableStateOf<NetworkCommentWithChild?>(null) }
+    val myProfileImageUrl by viewModel.loginMemberProfileImage.collectAsStateWithLifecycle()
+    val commentList = viewModel.commentList.collectAsLazyPagingItems()
+    val childCommentMap by viewModel.childComments.collectAsStateWithLifecycle()
 
     Column(
         modifier = modifier,
@@ -64,16 +66,17 @@ internal fun CommentContent(
             contentPadding = PaddingValues(horizontal = HorizontalPadding, vertical = 32.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            items(count = commentList.size, key = { commentList[it].commentId }) {
-                val comment = commentList[it]
+            items(count = commentList.itemCount) {
+                val comment = commentList[it] ?: return@items
 
                 CommentItem(
                     imageUrl = comment.profileImage,
                     handle = comment.handle,
                     content = comment.content,
-                    isOwner = comment.profileImage == myProfileImageUrl,
-                    onClickReply = { parentComment = comment },
+                    isOwner = true,
+                    onClickReply = {  },
                     onClickDelete = { viewModel.deleteComment(comment.commentId) },
+                    createdDate = comment.createdDate,
                 ) {
                     if (comment.childCommentList.isNotEmpty()) {
                         comment.childCommentList.forEach { childComment ->
@@ -87,13 +90,31 @@ internal fun CommentContent(
                                 isOwner = childComment.profileImage == myProfileImageUrl,
                                 onClickDelete = { viewModel.deleteComment(childComment.commentId) },
                                 isChild = true,
+                                createdDate = childComment.createdDate,
+                            )
+                        }
+                    }
+
+                    childCommentMap[comment.commentId]?.let { childCommentList ->
+                        childCommentList.forEach { childComment ->
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            CommentItem(
+                                imageUrl = childComment.profileImage,
+                                imageSize = 36.dp,
+                                handle = childComment.handle,
+                                content = childComment.content,
+                                isOwner = childComment.profileImage == myProfileImageUrl,
+                                onClickDelete = { viewModel.deleteComment(childComment.commentId) },
+                                isChild = true,
+                                createdDate = childComment.createdDate,
                             )
                         }
                     }
                 }
             }
 
-            if (commentList.isEmpty()) {
+            if (commentList.itemCount == 0) {
                 item {
                     Column(
                         modifier = Modifier
@@ -121,11 +142,11 @@ internal fun CommentContent(
                 .fillMaxWidth()
                 .imePadding(),
             myProfileImageUrl = myProfileImageUrl,
-            parentComment = parentComment,
+            parentComment = null,
             uploadComment = { comment, parentCommentId ->
-                viewModel.upLoadComment(comment, parentCommentId)
+                viewModel.uploadComment(comment, parentCommentId)
             },
-            removeParentComment = { parentComment = null },
+            removeParentComment = {  },
         )
     }
 }
@@ -139,6 +160,7 @@ private fun CommentItem(
     content: String,
     isChild: Boolean = false,
     isOwner: Boolean = false,
+    createdDate: String?,
     onClickReply: () -> Unit = {},
     onClickDelete: () -> Unit = {},
     childContent: @Composable () -> Unit = {},
@@ -159,10 +181,19 @@ private fun CommentItem(
             Column(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Text(
-                    text = handle,
-                    style = PochakTextStyle.body3_1,
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Text(
+                        text = handle,
+                        style = PochakTextStyle.body3_1,
+                    )
+
+                    ElapsedTimeText(
+                        createdDate = createdDate ?: "",
+                    )
+                }
 
                 Text(
                     text = content,
@@ -201,7 +232,7 @@ private fun CommentItem(
 internal fun CommentTextField(
     modifier: Modifier = Modifier,
     myProfileImageUrl: String,
-    parentComment: NetworkCommentWithChild?,
+    parentComment: ChildCommentPageResponse?,
     uploadComment: (String, Int?) -> Unit,
     removeParentComment: () -> Unit,
 ) {
