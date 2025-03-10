@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -303,6 +304,7 @@ fun RecentSearchItemList(
             .padding(top = 12.dp),
         contentPadding = PaddingValues(horizontal = 0.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
+        columns = GridCells.Fixed(1),
     ) {
         items(recentSearches) { member ->
             RecentSearchRow(
