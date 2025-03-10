@@ -64,7 +64,8 @@ internal fun AlarmRoute(
     modifier: Modifier = Modifier,
     viewModel: AlarmViewModel = hiltViewModel(),
     navigateToPostDetail: (Int) -> Unit,
-    ) {
+    navigateToProfile: (String) -> Unit
+) {
     val allAlarms = viewModel.allAlarms.collectAsStateWithLifecycle()
     val isLoading = viewModel.isLoading.collectAsStateWithLifecycle()
     val isRefreshing = viewModel.isRefreshing.collectAsStateWithLifecycle()
@@ -76,7 +77,8 @@ internal fun AlarmRoute(
         isLoading = isLoading.value,
         isRefreshing = isRefreshing.value,
         onLoadPage = viewModel::loadPage,
-        onPostDetailClick = navigateToPostDetail
+        onPostAlarmClick = navigateToPostDetail,
+        onFollowAlarmClick = navigateToProfile
     )
 }
 
@@ -88,7 +90,8 @@ internal fun AlarmScreen(
     isLoading: Boolean,
     isRefreshing: Boolean,
     onLoadPage: (Boolean) -> Unit,
-    onPostDetailClick: (Int) -> Unit,
+    onPostAlarmClick: (Int) -> Unit,
+    onFollowAlarmClick: (String) -> Unit
 ) {
     Column(
         modifier = modifier
@@ -106,7 +109,8 @@ internal fun AlarmScreen(
             isLoading = isLoading,
             isRefreshing = isRefreshing,
             onLoadPage = onLoadPage,
-            onPostDetailClick = onPostDetailClick
+            onPostDetailClick = onPostAlarmClick,
+            onFollowAlarmClick = onFollowAlarmClick
         )
     }
 }
@@ -121,6 +125,7 @@ fun AlarmContent(
     isRefreshing: Boolean,
     onLoadPage: (Boolean) -> Unit,
     onPostDetailClick: (Int) -> Unit,
+    onFollowAlarmClick: (String) -> Unit
 ) {
     val selectedTagId by viewModel.selectedTagId.collectAsState()
     val postPreviewUiState by viewModel.postPreviewUiState
@@ -148,6 +153,7 @@ fun AlarmContent(
                 alarm = alarm,
                 viewModel = viewModel,
                 onPostDetailClick = onPostDetailClick,
+                onFollowAlarmClick = onFollowAlarmClick
             )
         }
 
@@ -189,6 +195,7 @@ fun AlarmItem(
     alarm: Alarm,
     viewModel: AlarmViewModel,
     onPostDetailClick: (Int) -> Unit,
+    onFollowAlarmClick: (String) -> Unit
 ) {
     var isClicked by rememberSaveable { mutableStateOf(false) }
 
@@ -229,7 +236,7 @@ fun AlarmItem(
                             viewModel.getPostPreview(alarm.alarmId) // 태그 미리보기 가져오기
                         }
                         AlarmType.FOLLOW -> {
-                            // 해당 프로필로 이동
+                            alarm.memberHandle?.let { onFollowAlarmClick(it) } // 팔로우한 유저 프로필로 이동
                         }
                         else -> {
                             onPostDetailClick(alarm.postId!!.toInt()) // 게시물 상세로 이동

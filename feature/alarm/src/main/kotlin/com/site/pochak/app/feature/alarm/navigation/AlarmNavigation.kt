@@ -13,10 +13,12 @@ fun NavController.navigateToAlarm(navOptions: NavOptions? = null) = navigate(Ala
 
 fun NavGraphBuilder.alarmScreen(
     navigateToPostDetail: (Int) -> Unit,
-) {
+    navigateToProfile: (String) -> Unit
+    ) {
     composable<AlarmRoute> {
         AlarmRoute(
-            navigateToPostDetail = navigateToPostDetail
+            navigateToPostDetail = navigateToPostDetail,
+            navigateToProfile = navigateToProfile
         )
     }
 }

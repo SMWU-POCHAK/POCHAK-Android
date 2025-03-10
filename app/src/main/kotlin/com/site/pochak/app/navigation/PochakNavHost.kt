@@ -79,7 +79,11 @@ fun PochakNavHost(
             navigateToSearchHistory = navController::navigateToSearchHistory,
             navigateToPostDetail = navController::navigateToPostDetail
         )
-        searchHistoryScreen()
+        searchHistoryScreen(
+            navigateToProfile = { handle ->
+                navController.navigateToProfile(handle = handle)
+            }
+        )
         postDetailScreen(
             onBack = { navController.popBackStack() },
             navigateToProfile = { handle ->
@@ -99,7 +103,10 @@ fun PochakNavHost(
             }
         )
         alarmScreen(
-            navigateToPostDetail = navController::navigateToPostDetail
+            navigateToPostDetail = navController::navigateToPostDetail,
+            navigateToProfile = { handle ->
+                navController.navigateToProfile(handle = handle)
+            }
         )
         profileGraph(
             onBack = { navController.popBackStack() },

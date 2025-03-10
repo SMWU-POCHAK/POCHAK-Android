@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -63,10 +64,12 @@ import com.site.pochak.app.core.network.model.NetworkMember
 internal fun SearchHistoryRoute(
     modifier: Modifier = Modifier,
     viewModel: SearchHistoryViewModel = hiltViewModel(),
+    navigateToProfile: (String) -> Unit
 ) {
     SearchHistoryScreen(
         modifier = modifier.padding(horizontal = HorizontalPadding),
         viewModel = viewModel,
+        navigateToProfile = navigateToProfile
     )
 }
 
@@ -74,6 +77,7 @@ internal fun SearchHistoryRoute(
 internal fun SearchHistoryScreen(
     modifier: Modifier = Modifier,
     viewModel: SearchHistoryViewModel,
+    navigateToProfile: (String) -> Unit
 ) {
     val recentSearches by viewModel.recentSearches.observeAsState(emptyList())
     val currentKeyword by viewModel.currentKeyword.collectAsStateWithLifecycle()
@@ -97,13 +101,18 @@ internal fun SearchHistoryScreen(
                 viewModel = viewModel,
                 searchResults = searchResults,
                 isLoading = isLoading,
-                onClick = { /* Navigate to the profile */ }
+                onClick = {
+                    navigateToProfile(it.handle)
+                }
             )
         } else {
             RecentSearchesContent(
                 modifier = Modifier,
                 viewModel = viewModel,
                 recentSearches = recentSearches,
+                onClick = {
+                    navigateToProfile(it.handle)
+                }
             )
         }
     }
@@ -229,6 +238,7 @@ fun RecentSearchesContent(
     modifier: Modifier,
     viewModel: SearchHistoryViewModel,
     recentSearches: List<RecentSearch>,
+    onClick: (RecentSearch) -> Unit
 ) {
     Column(
         modifier = modifier
@@ -245,7 +255,7 @@ fun RecentSearchesContent(
             modifier = Modifier,
             viewModel = viewModel,
             recentSearches = recentSearches,
-            onClick = { /* Navigate to the profile */ }
+            onClick = { onClick(it) }
         )
     }
 }
@@ -294,6 +304,7 @@ fun RecentSearchItemList(
             .padding(top = 12.dp),
         contentPadding = PaddingValues(horizontal = 0.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
+        columns = GridCells.Fixed(1),
     ) {
         items(recentSearches) { member ->
             RecentSearchRow(
