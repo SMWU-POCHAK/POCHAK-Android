@@ -98,7 +98,9 @@ fun PochakNavHost(
                 navController.popBackStack()
             }
         )
-        alarmScreen()
+        alarmScreen(
+            navigateToPostDetail = navController::navigateToPostDetail
+        )
         profileGraph(
             onBack = { navController.popBackStack() },
             navigateToPostDetail = { postId ->

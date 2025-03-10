@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="feature_alarm_title">알림</string>
+    <string name="feature_alarm_tag_accept">수락</string>
+    <string name="feature_alarm_tag_reject">거절</string>
 </resources>
