@@ -95,7 +95,8 @@ internal fun PostDetailBottomSheetContent(
                 text = stringResource(id = state.title).let {
                     if (state == COMMENT) "${postDetail.ownerHandle}$it" else it
                 },
-                style = PochakTextStyle.body0
+                style = PochakTextStyle.body0,
+                modifier = Modifier.padding(bottom = 16.dp),
             )
 
             when (state) {
@@ -179,6 +180,7 @@ internal fun PostDetailBottomSheetContent(
 
                 COMMENT -> {
                     CommentContent(
+                        ownerHandle = postDetail.ownerHandle,
                     )
                 }
 
@@ -199,7 +201,7 @@ private fun MoreContent(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 12.dp),
+            .padding(bottom = 12.dp),
     ) {
         TextWithIcon(
             modifier = Modifier.clickable(onClick = onClickReport),

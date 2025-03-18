@@ -15,5 +15,6 @@
     <string name="feature_post_detail_report_fraud_or_scam">사기 또는 거짓</string>
     <string name="feature_post_detail_report_hate_speech_or_symbol">폭력 또는 위협</string>
     <string name="feature_post_detail_report_misinformation">거짓 정보</string>
+    <string name="feature_post_detail_report_success">신고가 접수되었습니다.</string>
     <string name="feature_post_detail_comment_more_text">더보기</string>
 </resources>

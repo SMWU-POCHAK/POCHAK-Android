@@ -32,7 +32,7 @@ interface CommentService {
     suspend fun getComments(
         @Path(value = "postId") postId: Int,
         @Query(value = "page") page: Int,
-        @Query(value = "sort") sort: String = "createdDate,asc"
+        @Query(value = "sort") sort: String = "createdDate,desc"
     ): NetworkResponse<CommentPageResponse>
 
     @GET(value = "api/v2/posts/{postId}/comments/{commentId}")
@@ -40,7 +40,7 @@ interface CommentService {
         @Path(value = "postId") postId: Int,
         @Path(value = "commentId") commentId: Int,
         @Query(value = "page") page: Int,
-        @Query(value = "sort") sort: String = "createdDate,asc"
+        @Query(value = "sort") sort: String = "createdDate,desc"
     ): NetworkResponse<ChildCommentPageResponse>
 
     @DELETE(value = "api/v2/posts/{postId}/comments")

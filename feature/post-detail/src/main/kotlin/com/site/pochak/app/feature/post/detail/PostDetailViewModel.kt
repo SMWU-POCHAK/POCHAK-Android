@@ -1,5 +1,6 @@
 package com.site.pochak.app.feature.post.detail
 
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -103,6 +104,7 @@ class PostDetailViewModel @Inject constructor(
                         .collect {
                             _actionState.value = if (it) {
                                 isFollow = isFollowNotNull.not()
+                                Log.d("PostDetailViewModel", "followMember: $isFollow")
                                 PostDetailActionState.Idle
                             } else {
                                 PostDetailActionState.Error("Failed to follow member")

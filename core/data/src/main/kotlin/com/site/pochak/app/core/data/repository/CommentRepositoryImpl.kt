@@ -40,22 +40,10 @@ class CommentRepositoryImpl @Inject constructor(
         ).flow
     }
 
-    override fun getChildComments(
-        postId: Int,
-        commentId: Int,
-        page: Int
-    ): Flow<PagingData<NetworkComment>> {
-        return Pager(
-            config = PagingConfig(pageSize = 10, prefetchDistance = 0),
-            pagingSourceFactory = {
-                ItemPagingSource<NetworkComment> { page ->
-                    ApiResultHandler.handleResult {
-                        commentService.getChildComments(postId, commentId, page + 1)
-                    }
-                }
-            }
-        ).flow
-    }
+    override suspend fun getChildComments(postId: Int, commentId: Int, page: Int) =
+        ApiResultHandler.handleResult {
+            commentService.getChildComments(postId, commentId, page)
+        }
 
     override suspend fun deleteComment(postId: Int, commentId: Int) =
         ApiResultHandler.handleResult {

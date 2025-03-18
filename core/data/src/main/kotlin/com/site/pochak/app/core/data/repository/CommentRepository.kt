@@ -21,11 +21,7 @@ interface CommentRepository {
     /**
      * @return: [NetworkCommentWithChild]
      */
-    fun getChildComments(
-        postId: Int,
-        commentId: Int,
-        page: Int = 0
-    ): Flow<PagingData<NetworkComment>>
+    suspend fun getChildComments(postId: Int, commentId: Int, page: Int = 0): ApiResult
 
     suspend fun deleteComment(postId: Int, commentId: Int): ApiResult
 

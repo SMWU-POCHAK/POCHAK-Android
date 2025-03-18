@@ -1,5 +1,6 @@
 package com.site.pochak.app.feature.post.detail
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -33,6 +34,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -78,6 +80,8 @@ fun PostDetailRoute(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val actionState by viewModel.actionState.collectAsStateWithLifecycle()
+    // 미리 commentList 불러오기
+    val commentList = commentViewModel.commentList.collectAsLazyPagingItems()
 
     PostDetailScreen(
         modifier = modifier,
@@ -108,7 +112,11 @@ internal fun PostDetailScreen(
     reportPost: (String) -> Unit,
     navigateToProfile: (String) -> Unit,
 ) {
-    Box(modifier = modifier.fillMaxSize()) {
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .consumeWindowInsets(WindowInsets.safeDrawing.only(WindowInsetsSides.Top)),
+    ) {
         when (uiState) {
             is PostDetailUiState.Success -> {
                 PostContent(
@@ -154,10 +162,24 @@ internal fun PostContent(
     reportPost: (String) -> Unit,
     navigateToProfile: (String) -> Unit,
 ) {
+    val context = LocalContext.current
     var bottomSheetState by remember { mutableStateOf(CLOSED) }
 
     fun changeBottomSheetState(newState: PostDetailBottomSheetState) {
         bottomSheetState = newState
+    }
+
+    LaunchedEffect(actionState) {
+        when (actionState) {
+            PostDetailActionState.Delete -> onBack()
+            PostDetailActionState.Report -> {
+                Toast.makeText(context, "신고가 접수되었습니다.", Toast.LENGTH_SHORT).show()
+            }
+            is PostDetailActionState.Error -> {
+                Toast.makeText(context, actionState.message, Toast.LENGTH_SHORT).show()
+            }
+            else -> Unit
+        }
     }
 
     Scaffold(
@@ -177,6 +199,7 @@ internal fun PostContent(
             PostHeader(
                 modifier = Modifier.padding(horizontal = HorizontalPadding),
                 postDetail = postDetail,
+                isFollow = isFollow,
                 onClickTag = { changeBottomSheetState(TAG) },
                 onClickFollow = onClickFollow,
                 navigateToProfile = navigateToProfile,
@@ -189,7 +212,7 @@ internal fun PostContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = HorizontalPadding, vertical = 8.dp)
-                     // TODO: Remove preview
+                    // TODO: Remove preview
                     .aspectRatio(3 / 4f)
                     .background(Color.Gray),
             )
@@ -223,6 +246,7 @@ internal fun PostContent(
 private fun PostHeader(
     modifier: Modifier = Modifier,
     postDetail: NetworkPostDetail,
+    isFollow: Boolean?,
     onClickTag: () -> Unit,
     onClickFollow: () -> Unit,
     navigateToProfile: (String) -> Unit,
@@ -281,7 +305,7 @@ private fun PostHeader(
         }
 
         // FollowButton
-        postDetail.isFollow?.let { isFollow ->
+        isFollow?.let { isFollow ->
             FollowButton(
                 isFollow = isFollow,
                 onClick = { onClickFollow() }
