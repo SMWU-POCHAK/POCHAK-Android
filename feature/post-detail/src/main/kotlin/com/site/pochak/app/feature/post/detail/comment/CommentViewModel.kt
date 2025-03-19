@@ -1,11 +1,8 @@
 package com.site.pochak.app.feature.post.detail.comment
 
 import android.util.Log
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
@@ -13,28 +10,21 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
-import androidx.paging.compose.collectAsLazyPagingItems
-import androidx.paging.flatMap
-import androidx.paging.insertSeparators
 import androidx.paging.map
 import com.site.pochak.app.core.data.repository.CommentRepository
 import com.site.pochak.app.core.network.model.ChildCommentPageResponse
 import com.site.pochak.app.core.network.model.NetworkComment
-import com.site.pochak.app.core.network.model.NetworkPageInfo
-import com.site.pochak.app.core.network.model.PageResponse
 import com.site.pochak.app.core.network.utils.ApiResult
 import com.site.pochak.app.feature.post.detail.navigation.PostDetailRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -44,6 +34,7 @@ class CommentViewModel @Inject constructor(
     private val commentRepository: CommentRepository,
 ) : ViewModel() {
     private val postIdKey = "postId"
+    private val PENDDING_DELETION_DELAY = 4000L
 
     private val route = saveStateHandle.toRoute<PostDetailRoute>()
     private val postId = saveStateHandle.getStateFlow(
@@ -71,6 +62,9 @@ class CommentViewModel @Inject constructor(
         }
     }.cachedIn(viewModelScope)
 
+    private val _pendingDeletion = MutableStateFlow<Job?>(null)
+    val pendingDeletion: StateFlow<Job?> = _pendingDeletion.asStateFlow()
+
     fun loadChildComments(commentId: Int) {
         viewModelScope.launch {
             val page = childCommentPageInfo.getOrPut(commentId) { 0 }
@@ -86,17 +80,37 @@ class CommentViewModel @Inject constructor(
         }
     }
 
-    fun deleteComment(commentId: Int) {
+    fun deleteComment(commentId: Int, refresh: () -> Unit) {
+        val job = viewModelScope.launch {
+            delay(PENDDING_DELETION_DELAY)
+            _pendingDeletion.value = null
 
+            val result = commentRepository.deleteComment(postId.value, commentId)
+
+            if (result is ApiResult.SuccessNoResult) {
+                Log.d("CommentViewModel", "uploadComment: Success")
+                refresh()
+            } else {
+                Log.e("CommentViewModel", "uploadComment: Error")
+            }
+        }
+
+        _pendingDeletion.value = job
+    }
+
+    fun cancelPendingDeletion() {
+        _pendingDeletion.value?.cancel()
+        _pendingDeletion.value = null
     }
 
 
-    fun uploadComment(content: String, commentId: Int?) {
+    fun uploadComment(content: String, commentId: Int?, refresh: () -> Unit) {
         viewModelScope.launch {
             val result = commentRepository.uploadComment(postId.value, content, commentId)
 
             if (result is ApiResult.SuccessNoResult) {
                 Log.d("CommentViewModel", "uploadComment: Success")
+                refresh()
             } else {
                 Log.e("CommentViewModel", "uploadComment: Error")
             }
