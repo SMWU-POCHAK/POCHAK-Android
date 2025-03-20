@@ -14,23 +14,32 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.paging.compose.LazyPagingItems
 import com.site.pochak.app.core.designsystem.component.CircleCropAsyncImage
 import com.site.pochak.app.core.designsystem.component.HorizontalPadding
 import com.site.pochak.app.core.designsystem.component.PochakTextStyle
 import com.site.pochak.app.core.designsystem.icon.PochakIcons
 import com.site.pochak.app.core.designsystem.theme.ErrorColor
 import com.site.pochak.app.core.designsystem.theme.Gray01
+import com.site.pochak.app.core.designsystem.theme.PochakTheme
+import com.site.pochak.app.core.network.model.ChildCommentPageResponse
+import com.site.pochak.app.core.network.model.NetworkComment
 import com.site.pochak.app.core.network.model.NetworkPostDetail
+import com.site.pochak.app.core.network.model.NetworkTag
 import com.site.pochak.app.feature.post.detail.PostDetailBottomSheetState.CLOSED
 import com.site.pochak.app.feature.post.detail.PostDetailBottomSheetState.COMMENT
 import com.site.pochak.app.feature.post.detail.PostDetailBottomSheetState.MORE
@@ -52,6 +61,7 @@ internal enum class PostDetailBottomSheetState(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun PostDetailBottomSheetContent(
+    modifier: Modifier = Modifier,
     state: PostDetailBottomSheetState,
     postDetail: NetworkPostDetail,
     onDismiss: () -> Unit,
@@ -72,106 +82,109 @@ internal fun PostDetailBottomSheetContent(
             }
     }
 
-    if (state != CLOSED) {
-        ModalBottomSheet(
-            modifier = Modifier.statusBarsPadding(),
-            onDismissRequest = onDismiss,
-            sheetState = sheetState,
+    ModalBottomSheet(
+        modifier = modifier.statusBarsPadding(),
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Text(
-                    text = if (state == COMMENT) postDetail.ownerHandle + stringResource(id = state.title)
-                    else stringResource(id = state.title),
-                    style = PochakTextStyle.body0
-                )
+            Text(
+                text = stringResource(id = state.title).let {
+                    if (state == COMMENT) "${postDetail.ownerHandle}$it" else it
+                },
+                style = PochakTextStyle.body0,
+                modifier = Modifier.padding(bottom = 16.dp),
+            )
 
-                when (state) {
-                    MORE -> MoreContent(
-                        modifier = Modifier.padding(horizontal = HorizontalPadding),
-                        isOwner = postDetail.isFollow == null,
-                        onClickReport = {
-                            scope.launch { sheetState.hide() }
-                                .invokeOnCompletion {
-                                    if (!sheetState.isVisible) {
-                                        changeState(REPORT)
-                                        scope.launch { sheetState.show() }
-                                    }
-                                }
-                        },
-                        onClickCancel = { hideSheet() },
-                        onClickDelete = onDelete,
-                    )
-
-                    REPORT -> {
-                        val reportList = mapOf(
-                            "NOT_INTERESTED" to stringResource(id = R.string.feature_post_detail_report_not_interested),
-                            "SPAM" to stringResource(id = R.string.feature_post_detail_report_spam),
-                            "NUDITY_OR_SEXUAL_CONTENT" to stringResource(id = R.string.feature_post_detail_report_nudity_or_sexual_content),
-                            "FRAUD_OR_SCAM" to stringResource(id = R.string.feature_post_detail_report_fraud_or_scam),
-                            "HATE_SPEECH_OR_SYMBOL" to stringResource(id = R.string.feature_post_detail_report_hate_speech_or_symbol),
-                            "MISINFORMATION" to stringResource(id = R.string.feature_post_detail_report_misinformation),
-                        )
-
-                        reportList.forEach { report ->
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        reportPost(report.key)
-                                        hideSheet()
-                                    }
-                                    .padding(start = HorizontalPadding),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Text(
-                                    modifier = Modifier.padding(vertical = 14.dp),
-                                    text = report.value,
-                                    style = PochakTextStyle.body2
-                                )
-
-                                Box(
-                                    modifier = Modifier.size(48.dp),
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    Image(
-                                        painter = painterResource(PochakIcons.ArrowRight),
-                                        contentDescription = null
-                                    )
+            when (state) {
+                MORE -> MoreContent(
+                    modifier = Modifier.padding(horizontal = HorizontalPadding),
+                    isOwner = postDetail.isFollow == null,
+                    onClickReport = {
+                        scope.launch { sheetState.hide() }
+                            .invokeOnCompletion {
+                                if (!sheetState.isVisible) {
+                                    changeState(REPORT)
+                                    scope.launch { sheetState.show() }
                                 }
                             }
+                    },
+                    onClickCancel = { hideSheet() },
+                    onClickDelete = onDelete,
+                )
 
-                            if (report != reportList.entries.last()) {
+                REPORT -> {
+                    val reportList = mapOf(
+                        "NOT_INTERESTED" to stringResource(id = R.string.feature_post_detail_report_not_interested),
+                        "SPAM" to stringResource(id = R.string.feature_post_detail_report_spam),
+                        "NUDITY_OR_SEXUAL_CONTENT" to stringResource(id = R.string.feature_post_detail_report_nudity_or_sexual_content),
+                        "FRAUD_OR_SCAM" to stringResource(id = R.string.feature_post_detail_report_fraud_or_scam),
+                        "HATE_SPEECH_OR_SYMBOL" to stringResource(id = R.string.feature_post_detail_report_hate_speech_or_symbol),
+                        "MISINFORMATION" to stringResource(id = R.string.feature_post_detail_report_misinformation),
+                    )
+
+                    reportList.forEach { report ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    reportPost(report.key)
+                                    hideSheet()
+                                }
+                                .padding(start = HorizontalPadding),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                modifier = Modifier.padding(vertical = 14.dp),
+                                text = report.value,
+                                style = PochakTextStyle.body2
+                            )
+
+                            Box(
+                                modifier = Modifier.size(48.dp),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Image(
+                                    painter = painterResource(PochakIcons.ArrowRight),
+                                    contentDescription = null
+                                )
+                            }
+                        }
+
+                        if (report != reportList.entries.last()) {
+                            HorizontalDivider(color = Gray01)
+                        }
+                    }
+                }
+
+                TAG -> {
+                    Column {
+                        postDetail.tagList.forEach { tag ->
+                            MemberItem(
+                                imageUrl = tag.profileImage,
+                                title = tag.handle,
+                                text = tag.name,
+                                onClickItem = { navigateToProfile(tag.handle) }
+                            )
+
+                            if (tag != postDetail.tagList.last()) {
                                 HorizontalDivider(color = Gray01)
                             }
                         }
                     }
-
-                    TAG -> {
-                        Column {
-                            postDetail.tagList.forEach { tag ->
-                                MemberItem(
-                                    imageUrl = tag.profileImage,
-                                    title = tag.handle,
-                                    text = tag.name,
-                                    onClickItem = { navigateToProfile(tag.handle) }
-                                )
-
-                                if (tag != postDetail.tagList.last()) {
-                                    HorizontalDivider(color = Gray01)
-                                }
-                            }
-                        }
-                    }
-
-                    COMMENT -> {
-                        CommentContent()
-                    }
-                    else -> {}
                 }
+
+                COMMENT -> {
+                    CommentContent(
+                        ownerHandle = postDetail.ownerHandle,
+                    )
+                }
+
+                else -> {}
             }
         }
     }
@@ -188,7 +201,7 @@ private fun MoreContent(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 12.dp),
+            .padding(bottom = 12.dp),
     ) {
         TextWithIcon(
             modifier = Modifier.clickable(onClick = onClickReport),
@@ -265,6 +278,7 @@ private fun MemberItem(
             modifier = Modifier.size(40.dp),
             imageUrl = imageUrl,
             contentDescription = "profile image",
+            onClick = onClickItem
         )
 
         Column(
@@ -280,5 +294,40 @@ private fun MemberItem(
                 style = PochakTextStyle.body3,
             )
         }
+    }
+}
+
+@Preview
+@Composable
+private fun BottomSheetPreview() {
+    PochakTheme {
+        PostDetailBottomSheetContent(
+            state = MORE,
+            postDetail = NetworkPostDetail(
+                ownerId = 1,
+                ownerHandle = "ownerHandle",
+                ownerProfileImage = "ownerProfileImage",
+                tagList = listOf(NetworkTag(1, "", "previewHandle", "previewName")),
+                isFollow = true,
+                postImage = "postImage",
+                allowedDate = "2024-07-20T17:37:52.926754",
+                isLike = true,
+                likeCount = 1,
+                caption = "caption Long Long Long Long Long Long Long",
+                recentComment = NetworkComment(
+                    1,
+                    1,
+                    "commentContent",
+                    "commentHandle",
+                    "2024-07-20T17:37:52.926754",
+                    "Content"
+                ),
+            ),
+            onDismiss = {},
+            changeState = {},
+            onDelete = {},
+            reportPost = {},
+            navigateToProfile = {},
+        )
     }
 }

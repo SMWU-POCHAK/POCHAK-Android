@@ -1,20 +1,30 @@
 package com.site.pochak.app.feature.post.detail.comment
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import android.util.Log
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
+import androidx.paging.map
 import com.site.pochak.app.core.data.repository.CommentRepository
-import com.site.pochak.app.core.network.model.CommentPageResponse
-import com.site.pochak.app.core.network.model.NetworkCommentWithChild
+import com.site.pochak.app.core.network.model.ChildCommentPageResponse
+import com.site.pochak.app.core.network.model.NetworkComment
 import com.site.pochak.app.core.network.utils.ApiResult
 import com.site.pochak.app.feature.post.detail.navigation.PostDetailRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -24,6 +34,7 @@ class CommentViewModel @Inject constructor(
     private val commentRepository: CommentRepository,
 ) : ViewModel() {
     private val postIdKey = "postId"
+    private val PENDDING_DELETION_DELAY = 4000L
 
     private val route = saveStateHandle.toRoute<PostDetailRoute>()
     private val postId = saveStateHandle.getStateFlow(
@@ -31,71 +42,77 @@ class CommentViewModel @Inject constructor(
         initialValue = route.postId
     )
 
-    var myProfileImageUrl by mutableStateOf<String>("")
-        private set
+    private val _childComments = mutableStateMapOf<Int, SnapshotStateList<NetworkComment>>()
+    val childComments: Map<Int, SnapshotStateList<NetworkComment>> get() = _childComments
 
-    private val _commentList = MutableStateFlow<List<NetworkCommentWithChild>>(emptyList())
-    val commentList = _commentList.asStateFlow()
+    private val childCommentPageInfo = mutableStateMapOf<Int, Int>()
+    val childCommentPageIsLast = mutableStateMapOf<Int, MutableStateFlow<Boolean>>()
 
-    private var page = 0
-    private var isLastPage = false
+    val loginMemberProfileImage: StateFlow<String> = commentRepository.loginMemberProfileImage
+    val commentList: Flow<PagingData<ChildCommentPageResponse>> = postId.flatMapLatest { postId ->
+        commentRepository.getComments(postId).map { pagingData ->
+            pagingData.map {
+                if (it.childCommentList.isNotEmpty()) {
+                    _childComments[it.commentId] = mutableStateListOf()
+                    childCommentPageIsLast[it.commentId] = MutableStateFlow(false)
+                }
 
-    init {
-        fetchCommentList()
-    }
+                it.copy()
+            }
+        }
+    }.cachedIn(viewModelScope)
 
-    private fun refreshCommentList() {
-        _commentList.value = emptyList()
-        page = 0
-        isLastPage = false
-        fetchCommentList()
-    }
+    private val _pendingDeletion = MutableStateFlow<Job?>(null)
+    val pendingDeletion: StateFlow<Job?> = _pendingDeletion.asStateFlow()
 
-    fun fetchCommentList() {
-        if (isLastPage) return
-
+    fun loadChildComments(commentId: Int) {
         viewModelScope.launch {
-            when (val apiResult = commentRepository.getComments(postId.value, page)) {
-                is ApiResult.Success<*> -> {
-                    val commentWithChildPage = apiResult.result as CommentPageResponse
+            val page = childCommentPageInfo.getOrPut(commentId) { 0 }
+            val result = commentRepository.getChildComments(postId.value, commentId, page)
 
-                    myProfileImageUrl = commentWithChildPage.loginMemberProfileImage
-                    _commentList.value += commentWithChildPage.data
+            if (result is ApiResult.Success<*>) {
+                val childCommentPageResponse = result.result as ChildCommentPageResponse
 
-                    page++
-                }
-
-                else -> {
-                    // Handle error
-                }
+                _childComments[commentId]?.addAll(childCommentPageResponse.childCommentList)
+                childCommentPageInfo[commentId] = page + 1
+                childCommentPageIsLast[commentId]?.value = childCommentPageResponse.childCommentPageInfo.lastPage
             }
         }
     }
 
-    fun upLoadComment(comment: String, parentCommentId: Int?) {
-        viewModelScope.launch {
-            when (val apiResult = commentRepository.uploadComment(postId.value, comment, parentCommentId)) {
-                is ApiResult.SuccessNoResult -> {
-                    refreshCommentList()
-                }
+    fun deleteComment(commentId: Int, refresh: () -> Unit) {
+        val job = viewModelScope.launch {
+            delay(PENDDING_DELETION_DELAY)
+            _pendingDeletion.value = null
 
-                else -> {
-                    // Handle error
-                }
+            val result = commentRepository.deleteComment(postId.value, commentId)
+
+            if (result is ApiResult.SuccessNoResult) {
+                Log.d("CommentViewModel", "uploadComment: Success")
+                refresh()
+            } else {
+                Log.e("CommentViewModel", "uploadComment: Error")
             }
         }
+
+        _pendingDeletion.value = job
     }
 
-    fun deleteComment(commentId: Int) {
-        viewModelScope.launch {
-            when (val apiResult = commentRepository.deleteComment(postId.value, commentId)) {
-                is ApiResult.SuccessNoResult -> {
-                    refreshCommentList()
-                }
+    fun cancelPendingDeletion() {
+        _pendingDeletion.value?.cancel()
+        _pendingDeletion.value = null
+    }
 
-                else -> {
-                    // Handle error
-                }
+
+    fun uploadComment(content: String, commentId: Int?, refresh: () -> Unit) {
+        viewModelScope.launch {
+            val result = commentRepository.uploadComment(postId.value, content, commentId)
+
+            if (result is ApiResult.SuccessNoResult) {
+                Log.d("CommentViewModel", "uploadComment: Success")
+                refresh()
+            } else {
+                Log.e("CommentViewModel", "uploadComment: Error")
             }
         }
     }

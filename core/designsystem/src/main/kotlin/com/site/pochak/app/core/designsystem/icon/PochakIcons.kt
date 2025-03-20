@@ -29,4 +29,5 @@ object PochakIcons {
     val EditProfile = R.drawable.ic_edit_profile
     val Checked = R.drawable.ic_checked
     val Setting = R.drawable.ic_setting
+    val UploadComment = R.drawable.ic_upload_comment
 }
