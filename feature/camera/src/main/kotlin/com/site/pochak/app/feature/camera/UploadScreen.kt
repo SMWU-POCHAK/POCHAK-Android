@@ -74,6 +74,7 @@ import com.site.pochak.app.core.designsystem.theme.Gray02
 import com.site.pochak.app.core.designsystem.theme.Gray03
 import com.site.pochak.app.core.designsystem.theme.Gray0_5
 import com.site.pochak.app.core.designsystem.theme.Navy00
+import com.site.pochak.app.core.designsystem.theme.Yellow00
 import com.site.pochak.app.core.designsystem.theme.Yellow01
 import com.site.pochak.app.core.domain.SearchMembersUiState
 import com.site.pochak.app.core.domain.UploadUiState
@@ -161,7 +162,7 @@ fun UploadScreen(
                         Text(
                             text = stringResource(R.string.feature_camera_upload_button),
                             style = MaterialTheme.typography.bodySmall,
-                            color = if (selectedItems.value.isNotEmpty()) Yellow01 else Gray03, // 상태에 따른 색상
+                            color = if (selectedItems.value.isNotEmpty()) Yellow00 else Gray03, // 상태에 따른 색상
                         )
                     }
                 },
@@ -554,7 +555,7 @@ fun SelectedItemView(
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
-            .background(Yellow01, shape = RoundedCornerShape(18.dp))
+            .background(Yellow00, shape = RoundedCornerShape(18.dp))
             .wrapContentWidth()
             .padding(horizontal = 10.dp, vertical = 8.dp)
     ) {
