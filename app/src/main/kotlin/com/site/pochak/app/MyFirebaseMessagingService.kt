@@ -100,7 +100,8 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             val bitmap = imageUrl?.let { getBitmapFromCoil(it.toString()) }
             val notificationBuilder =
                 NotificationCompat.Builder(this@MyFirebaseMessagingService, CHANNEL_ID)
-                    .setSmallIcon(R.drawable.ic_logo)
+                    .setSmallIcon(R.drawable.ic_fcm_logo)
+                    .setColor(resources.getColor(R.color.yellow, null))
                     .setContentTitle(title)
                     .setContentText(message)
                     .setAutoCancel(true)
