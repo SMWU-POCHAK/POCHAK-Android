@@ -5,10 +5,7 @@ import android.graphics.BitmapFactory
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.LinearOutSlowInEasing
-import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
@@ -91,11 +88,9 @@ import com.site.pochak.app.core.designsystem.theme.Gray03
 import com.site.pochak.app.core.designsystem.theme.Gray0_5
 import com.site.pochak.app.core.designsystem.theme.Navy00
 import com.site.pochak.app.core.designsystem.theme.Yellow00
-import com.site.pochak.app.core.designsystem.theme.Yellow01
 import com.site.pochak.app.core.domain.SearchMembersUiState
 import com.site.pochak.app.core.domain.UploadUiState
 import com.site.pochak.app.core.model.data.Member
-import com.site.pochak.app.core.network.model.NetworkMember
 
 import java.io.File
 

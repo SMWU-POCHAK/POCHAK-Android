@@ -2,26 +2,21 @@ package com.site.pochak.app.feature.camera
 
 import android.util.Log
 import androidx.compose.runtime.State
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.toRoute
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import androidx.paging.map
 import com.site.pochak.app.core.data.repository.FollowRepository
 import com.site.pochak.app.core.datastore.TokenManager
-import com.site.pochak.app.core.domain.FollowUseCase
 import com.site.pochak.app.core.domain.PostUseCase
 import com.site.pochak.app.core.domain.SearchMembersUiState
 import com.site.pochak.app.core.domain.SearchUseCase
 import com.site.pochak.app.core.domain.UploadUiState
 import com.site.pochak.app.core.model.data.Member
-import com.site.pochak.app.core.network.model.NetworkMember
 import com.site.pochak.app.core.network.model.toModel
-import com.site.pochak.app.feature.profile.navigation.FollowRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
