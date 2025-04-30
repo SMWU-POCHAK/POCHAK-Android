@@ -19,4 +19,6 @@ dependencies {
 
     implementation(libs.coil.kt.compose)
     implementation(project(":core:domain"))
+    implementation(project(":feature:profile"))
+    implementation(libs.androidx.paging.compose.android)
 }
