@@ -4,6 +4,8 @@ import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,6 +20,7 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
@@ -122,6 +125,7 @@ internal fun PostDetailScreen(
                 PostContent(
                     onBack = onBack,
                     postDetail = uiState.postDetail,
+                    userHandle = uiState.userHandle,
                     actionState = actionState,
                     isFollow = isFollow,
                     onClickFollow = onClickFollow,
@@ -153,6 +157,7 @@ internal fun PostContent(
     modifier: Modifier = Modifier,
     onBack: () -> Unit,
     postDetail: NetworkPostDetail,
+    userHandle: String,
     actionState: PostDetailActionState,
     isFollow: Boolean?,
     onClickFollow: () -> Unit,
@@ -195,6 +200,7 @@ internal fun PostContent(
         Column(
             modifier = Modifier
                 .padding(paddingValues)
+                .scrollable(rememberScrollState(), orientation = Orientation.Vertical)
         ) {
             PostHeader(
                 modifier = Modifier.padding(horizontal = HorizontalPadding),
@@ -231,6 +237,7 @@ internal fun PostContent(
             PostDetailBottomSheetContent(
                 state = bottomSheetState,
                 postDetail = postDetail,
+                userHandle = userHandle,
                 onDismiss = { changeBottomSheetState(CLOSED) },
                 changeState = ::changeBottomSheetState,
                 onDelete = deletePost,

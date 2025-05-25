@@ -10,16 +10,19 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.site.pochak.app.core.data.repository.PostRepository
 import com.site.pochak.app.core.data.repository.ReportRepository
+import com.site.pochak.app.core.datastore.TokenManager
 import com.site.pochak.app.core.domain.FollowUseCase
 import com.site.pochak.app.core.domain.LikeUseCase
 import com.site.pochak.app.core.network.model.NetworkPostDetail
 import com.site.pochak.app.core.network.utils.ApiResult
 import com.site.pochak.app.feature.post.detail.navigation.PostDetailRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
@@ -33,6 +36,7 @@ private const val REPORT_SUCCESS = "REPORT2001"
 @HiltViewModel
 class PostDetailViewModel @Inject constructor(
     saveStateHandle: SavedStateHandle,
+    tokenManager: TokenManager,
     private val postRepository: PostRepository,
     private val followUseCase: FollowUseCase,
     private val likeUseCase: LikeUseCase,
@@ -45,6 +49,7 @@ class PostDetailViewModel @Inject constructor(
         key = postIdKey,
         initialValue = route.postId
     )
+    private val userHandle: Flow<String?> = tokenManager.getUserHandle()
 
     var isFollow by mutableStateOf<Boolean?>(null)
         private set
@@ -52,7 +57,7 @@ class PostDetailViewModel @Inject constructor(
     var isLike by mutableStateOf(false)
         private set
 
-    val uiState: StateFlow<PostDetailUiState> = postId.map { postId ->
+    val uiState: StateFlow<PostDetailUiState> = postId.combine(userHandle) { postId, userHandle ->
         when (val apiResult = postRepository.getPostDetail(postId)) {
             is ApiResult.Success<*> -> {
                 val postDetail = apiResult.result as NetworkPostDetail
@@ -60,7 +65,7 @@ class PostDetailViewModel @Inject constructor(
                 isFollow = postDetail.isFollow
                 isLike = postDetail.isLike
 
-                PostDetailUiState.Success(postDetail)
+                PostDetailUiState.Success(postDetail, userHandle ?: "")
             }
 
             else -> PostDetailUiState.Error
@@ -72,9 +77,10 @@ class PostDetailViewModel @Inject constructor(
             initialValue = PostDetailUiState.Loading
         )
 
-    private val _actionState: MutableStateFlow<PostDetailActionState> = MutableStateFlow(PostDetailActionState.Idle)
+    private val _actionState: MutableStateFlow<PostDetailActionState> =
+        MutableStateFlow(PostDetailActionState.Idle)
     val actionState: StateFlow<PostDetailActionState> = _actionState.asStateFlow()
-    
+
 
     fun likePost() {
         viewModelScope.launch {
@@ -154,7 +160,10 @@ class PostDetailViewModel @Inject constructor(
 
 sealed interface PostDetailUiState {
     data object Loading : PostDetailUiState
-    data class Success(val postDetail: NetworkPostDetail) : PostDetailUiState
+    data class Success(
+        val postDetail: NetworkPostDetail,
+        val userHandle: String
+    ) : PostDetailUiState
     data object Error : PostDetailUiState
 }
 

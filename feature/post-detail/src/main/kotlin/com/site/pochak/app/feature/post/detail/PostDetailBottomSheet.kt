@@ -64,6 +64,7 @@ internal fun PostDetailBottomSheetContent(
     modifier: Modifier = Modifier,
     state: PostDetailBottomSheetState,
     postDetail: NetworkPostDetail,
+    userHandle: String,
     onDismiss: () -> Unit,
     changeState: (PostDetailBottomSheetState) -> Unit,
     onDelete: () -> Unit,
@@ -102,7 +103,7 @@ internal fun PostDetailBottomSheetContent(
             when (state) {
                 MORE -> MoreContent(
                     modifier = Modifier.padding(horizontal = HorizontalPadding),
-                    isOwner = postDetail.isFollow == null,
+                    isOwner = postDetail.isFollow == null || postDetail.tagList.any { it.handle == userHandle },
                     onClickReport = {
                         scope.launch { sheetState.hide() }
                             .invokeOnCompletion {
@@ -323,6 +324,7 @@ private fun BottomSheetPreview() {
                     "Content"
                 ),
             ),
+            userHandle = "userHandle",
             onDismiss = {},
             changeState = {},
             onDelete = {},
