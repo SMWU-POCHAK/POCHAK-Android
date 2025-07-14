@@ -13,10 +13,12 @@ fun NavController.navigateToHome(navOptions: NavOptions? = null) = navigate(Home
 
 fun NavGraphBuilder.homeScreen(
     navigateToPostDetail: (Int) -> Unit,
+    navigateToNearbyPochaker: () -> Unit
 ) {
     composable<HomeRoute> {
         HomeRoute(
-            navigateToPostDetail = navigateToPostDetail
+            navigateToPostDetail = navigateToPostDetail,
+            navigateToNearbyPochaker = navigateToNearbyPochaker
         )
     }
 }

@@ -43,6 +43,7 @@ dependencies {
     implementation(projects.feature.setting)
     implementation(projects.feature.splash)
     implementation(projects.feature.postDetail)
+    implementation(projects.feature.nearbyPochaker)
 
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.material3.adaptive)

@@ -16,6 +16,8 @@ import com.site.pochak.app.feature.home.navigation.homeScreen
 import com.site.pochak.app.feature.login.navigation.LoginRoute
 import com.site.pochak.app.feature.login.navigation.loginScreen
 import com.site.pochak.app.feature.login.navigation.navigateToLogin
+import com.site.pochak.app.feature.nearby.pochaker.navigation.navigateToNearbyPochaker
+import com.site.pochak.app.feature.nearby.pochaker.navigation.nearbyPochakerScreen
 import com.site.pochak.app.feature.post.detail.navigation.navigateToPostDetail
 import com.site.pochak.app.feature.post.detail.navigation.postDetailScreen
 import com.site.pochak.app.feature.post.navigation.navigateToSearchHistory
@@ -73,7 +75,8 @@ fun PochakNavHost(
             navigateToSignUp = navController::navigateToProfileSetting,
         )
         homeScreen(
-            navigateToPostDetail = navController::navigateToPostDetail
+            navigateToPostDetail = navController::navigateToPostDetail,
+            navigateToNearbyPochaker = navController::navigateToNearbyPochaker
         )
         postScreen(
             navigateToSearchHistory = navController::navigateToSearchHistory,
@@ -154,5 +157,6 @@ fun PochakNavHost(
             },
             navigateToBlockUser = navController::navigateToBlockUser
         )
+        nearbyPochakerScreen()
     }
 }
