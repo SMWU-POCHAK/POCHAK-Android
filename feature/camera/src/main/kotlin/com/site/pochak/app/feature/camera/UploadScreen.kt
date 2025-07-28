@@ -2,6 +2,7 @@ package com.site.pochak.app.feature.camera
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.LinearOutSlowInEasing
@@ -49,6 +50,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -106,6 +108,7 @@ internal fun UploadRoute(
     val searchMembersUiState by viewModel.searchMembersUiState
     val uploadUiState by viewModel.uploadUiState
     val followingList = viewModel.followingList.collectAsLazyPagingItems()
+    val nearbyPochakerHandle by viewModel.nearbyPochakerHandle.collectAsState()
 
     UploadScreen(
         modifier = modifier,
@@ -115,7 +118,8 @@ internal fun UploadRoute(
         navigateToHome = navigateToHome,
         onBackClick = onBackClick,
         followingList = followingList,
-        )
+        nearbyPochakerHandle = nearbyPochakerHandle
+    )
 }
 
 @Composable
@@ -127,6 +131,7 @@ fun UploadScreen(
     navigateToHome: () -> Unit,
     onBackClick: () -> Unit,
     followingList: LazyPagingItems<Member>,
+    nearbyPochakerHandle: String? = null,
 ) {
     val context = LocalContext.current
     val cachedImageFile = File(context.cacheDir, "pochak_image.jpg")
@@ -209,6 +214,7 @@ fun UploadScreen(
                         handleSearchText = handleSearchText,
                         selectedItems = selectedItems,
                         followingList = followingList,
+                        nearbyPochakerHandle = nearbyPochakerHandle
                         )
                 }
             }
@@ -321,7 +327,8 @@ private fun SearchScreen(
     searchMembersUiState: SearchMembersUiState,
     handleSearchText: MutableState<String>,
     selectedItems: MutableState<List<String>>,
-    followingList: LazyPagingItems<Member>
+    followingList: LazyPagingItems<Member>,
+    nearbyPochakerHandle: String? = null,
 ) {
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
@@ -352,6 +359,13 @@ private fun SearchScreen(
                 mainAxisSpacing = 8.dp,
                 crossAxisSpacing = 8.dp,
             ) {
+                nearbyPochakerHandle?.let { handle ->
+                    HighlightedItemView(
+                        modifier = modifier,
+                        item = handle,
+                    )
+                }
+
                 selectedItems.value.forEach { item ->
                     SelectedItemView(
                         modifier = modifier,

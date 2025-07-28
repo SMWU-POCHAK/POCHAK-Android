@@ -77,7 +77,7 @@ class PochakAppState(
         when (topLevelDestination) {
             HOME -> navController.navigateToHome(topLevelNavOptions)
             POST -> navController.navigateToPost(topLevelNavOptions)
-            CAMERA -> navController.navigateToCamera(topLevelNavOptions)
+            CAMERA -> navController.navigateToCamera(navOptions = topLevelNavOptions)
             ALARM -> navController.navigateToAlarm(topLevelNavOptions)
             PROFILE -> navController.navigateToProfile(topLevelNavOptions)
         }

@@ -8,6 +8,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.navOptions
 import com.site.pochak.app.feature.alarm.navigation.alarmScreen
 import com.site.pochak.app.feature.camera.navigation.cameraScreen
+import com.site.pochak.app.feature.camera.navigation.navigateToCamera
 import com.site.pochak.app.feature.camera.navigation.navigateToUpload
 import com.site.pochak.app.feature.post.navigation.postScreen
 import com.site.pochak.app.feature.camera.navigation.uploadScreen
@@ -94,7 +95,11 @@ fun PochakNavHost(
             }
         )
         cameraScreen(
-            navigateToUpload = navController::navigateToUpload
+            navigateToUpload = { handle ->
+                navController.navigateToUpload(
+                    nearbyPochakerhandle = handle
+                )
+            }
         )
         uploadScreen(
             navigateToHome = {
@@ -157,6 +162,13 @@ fun PochakNavHost(
             },
             navigateToBlockUser = navController::navigateToBlockUser
         )
-        nearbyPochakerScreen()
+        nearbyPochakerScreen(
+            onBack = { navController.popBackStack() },
+            navigateToCamera = { handle ->
+                navController.navigateToCamera(
+                    nearbyPochakerhandle = handle
+                )
+            },
+        )
     }
 }

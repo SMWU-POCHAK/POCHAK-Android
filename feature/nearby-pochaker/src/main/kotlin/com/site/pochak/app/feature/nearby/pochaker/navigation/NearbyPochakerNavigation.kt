@@ -13,9 +13,13 @@ data object NearbyPochakerRoute
 fun NavController.navigateToNearbyPochaker(navOptions: NavOptions? = null) = navigate(NearbyPochakerRoute, navOptions)
 
 fun NavGraphBuilder.nearbyPochakerScreen(
+    onBack: () -> Unit,
+    navigateToCamera: (String) -> Unit,
 ) {
     composable<NearbyPochakerRoute> {
         NearbyPochakerRoute(
+            onBack = onBack,
+            navigateToCamera = navigateToCamera,
         )
     }
 }

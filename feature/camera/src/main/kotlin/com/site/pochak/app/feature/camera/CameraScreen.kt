@@ -56,7 +56,7 @@ private const val TAG = "CameraScreen"
 internal fun CameraRoute(
     modifier: Modifier = Modifier,
     viewModel: CameraViewModel = hiltViewModel(),
-    navigateToUpload: () -> Unit,
+    navigateToUpload: (String?) -> Unit,
 ) {
     CameraScreen(
         modifier = modifier,
@@ -69,7 +69,7 @@ internal fun CameraRoute(
 internal fun CameraScreen(
     modifier: Modifier = Modifier,
     viewModel: CameraViewModel,
-    navigateToUpload: () -> Unit,
+    navigateToUpload: (String?) -> Unit,
 ) {
     val context = LocalContext.current
     var permissionGranted by remember { mutableStateOf(false) }
@@ -80,6 +80,7 @@ internal fun CameraScreen(
     var flashOn by remember { mutableStateOf<Boolean>(false) }
     var selectedZoom by remember { mutableStateOf<Float?>(null) }
     var isAnimating by remember { mutableStateOf(false) }
+    val nearbyPochakerHandle by viewModel.nearbyPochakerHandle.collectAsState()
 
     // 권한 요청 결과를 처리하는 Activity Result Launcher
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -211,7 +212,7 @@ internal fun CameraScreen(
                 flashOn = flashOn,
                 onCapture = {
                     takePhoto(context as Activity, imageCapture, flashOn) {
-                        navigateToUpload()
+                        navigateToUpload(nearbyPochakerHandle)
                     }
                 },
                 onToggleFlash = {
