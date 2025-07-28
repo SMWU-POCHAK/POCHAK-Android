@@ -51,6 +51,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -90,6 +91,7 @@ import com.site.pochak.app.core.designsystem.theme.Gray03
 import com.site.pochak.app.core.designsystem.theme.Gray0_5
 import com.site.pochak.app.core.designsystem.theme.Navy00
 import com.site.pochak.app.core.designsystem.theme.Yellow00
+import com.site.pochak.app.core.designsystem.theme.Yellow01
 import com.site.pochak.app.core.domain.SearchMembersUiState
 import com.site.pochak.app.core.domain.UploadUiState
 import com.site.pochak.app.core.model.data.Member
@@ -173,16 +175,17 @@ fun UploadScreen(
                         onClick = {
                             viewModel.postPost(
                                 postImage = compressImageFile(cachedImageFile, context),
-                                taggedMemberHandleList = selectedItems.value,
+                                taggedMemberHandleList = listOfNotNull(nearbyPochakerHandle) + selectedItems.value,
                                 caption = caption.value
                             )
                         },
-                        enabled = selectedItems.value.isNotEmpty() // selectedItems가 비어 있으면 비활성화
+                        // selectedItems과 nearbypochakerhandle이 둘다 비어있으면 비활성화
+                        enabled = selectedItems.value.isNotEmpty() || nearbyPochakerHandle != null,
                     ) {
                         Text(
                             text = stringResource(R.string.feature_camera_upload_button),
                             style = MaterialTheme.typography.bodySmall,
-                            color = if (selectedItems.value.isNotEmpty()) Yellow00 else Gray03, // 상태에 따른 색상
+                            color = if (selectedItems.value.isNotEmpty() || nearbyPochakerHandle != null) Yellow00 else Gray03, // 상태에 따른 색상
                         )
                     }
                 },
@@ -466,7 +469,10 @@ private fun SearchScreen(
                                             result = member,
                                             onResultClick = {
                                                 handleSearchText.value = ""
-                                                if (member.handle !in selectedItems.value && selectedItems.value.size < 5) {
+                                                if (member.handle !in selectedItems.value
+                                                    && selectedItems.value.size < 5 &&
+                                                    member.handle != nearbyPochakerHandle
+                                                ) {
                                                     selectedItems.value += member.handle
                                                 } else if (selectedItems.value.size >= 5) {
                                                     showTagDialog = true
@@ -520,7 +526,11 @@ private fun SearchScreen(
                                     SearchResultItem(
                                         result = member,
                                         onResultClick = {
-                                            if (member.handle !in selectedItems.value && selectedItems.value.size < 5) {
+                                            if (
+                                                member.handle !in selectedItems.value &&
+                                                selectedItems.value.size < 5 &&
+                                                member.handle != nearbyPochakerHandle
+                                            ) {
                                                 selectedItems.value += member.handle
                                             } else if (selectedItems.value.size >= 5) {
                                                 showTagDialog = true
@@ -641,7 +651,7 @@ fun SelectedItemView(
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
-            .background(Yellow00, shape = RoundedCornerShape(18.dp))
+            .background(Yellow01, shape = RoundedCornerShape(18.dp))
             .wrapContentWidth()
             .padding(horizontal = 10.dp, vertical = 8.dp)
     ) {
@@ -654,6 +664,34 @@ fun SelectedItemView(
                 .clickable {
                     onDeleteClick(item)
                 },
+            painter = painterResource(id = PochakIcons.DeleteGray06),
+            contentDescription = "profile image"
+        )
+    }
+}
+
+@Composable
+fun HighlightedItemView(
+    modifier: Modifier = Modifier,
+    item: String,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+            .background(color = Yellow00, shape = RoundedCornerShape(18.dp))
+            .wrapContentWidth()
+            .padding(horizontal = 10.dp, vertical = 8.dp)
+    ) {
+        Text(
+            text = item,
+            color = Navy00,
+            style = MaterialTheme.typography.bodySmall
+        )
+
+        Image(
+            modifier = modifier
+                .padding(start = 4.dp)
+                .size(20.dp),
             painter = painterResource(id = PochakIcons.DeleteGray06),
             contentDescription = "profile image"
         )
