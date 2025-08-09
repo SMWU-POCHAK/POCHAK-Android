@@ -34,23 +34,7 @@ class NearbyPochakerViewModel @Inject constructor(
 
     private val bleManager = BleManager(application.applicationContext)
 
-    private val _nearbyUsers = MutableStateFlow<List<NearbyUser>>(emptyList())
-    val nearbyUsers: StateFlow<List<NearbyUser>> = _nearbyUsers
-
-
-    private val scanCallback = object : ScanCallback() {
-        override fun onScanResult(callbackType: Int, result: ScanResult?) {
-            val device = result?.device ?: return
-            val nameBytes = result.scanRecord?.getServiceData(SERVICE_UUID)
-            val name = nameBytes?.toString(Charsets.UTF_8) ?: return
-
-            val current = _nearbyUsers.value
-            if (current.none { it.address == device.address }) {
-                _nearbyUsers.value = current + NearbyUser(address = device.address, name = name)
-                Log.d("BLE", "Detected user: $name")
-            }
-        }
-    }
+    val nearbyUsers: StateFlow<List<BluetoothDevice>> = bleManager.scannedDevices
 
     init {
         viewModelScope.launch {
@@ -58,35 +42,45 @@ class NearbyPochakerViewModel @Inject constructor(
                 tokenManager.getUserHandle().first()
             }
             _userHandle.value = handle
+            handle?.let {
+                bleManager.setUserHandle(it)
+                bleManager.startAdvertising(handle)
+            }
+            bleManager.stopScanning()
+            bleManager.startScanning()
         }
     }
 
     fun startScan() {
-        bleManager.startScan(scanCallback)
+        bleManager.startScanning()
     }
 
     fun stopScan() {
-        bleManager.stopScan(scanCallback)
+        bleManager.stopScanning()
     }
 
     fun startAdvertising() {
-        bleManager.startAdvertising()
+        bleManager.startAdvertising(_userHandle.value ?: return)
     }
 
-    fun addDummyNearbyUsers() {
-        val dummyUsers = listOf(
-            NearbyUser(address = "00:11:22:33:44:55", name = "bella_cho"),
-            NearbyUser(address = "11:22:33:44:55:66", name = "_skf__11"),
-            NearbyUser(address = "22:33:44:55:66:77", name = "su.yeonn_"),
-            NearbyUser(address = "11:22:33:44:55:66", name = "_skf__11"),
-            NearbyUser(address = "22:33:44:55:66:77", name = "su.yeonn_")
-        )
-        _nearbyUsers.value = dummyUsers
+    fun startBackgroundAdvertising() {
+        viewModelScope.launch {
+            val handle = userHandle.value ?: return@launch
+            bleManager.startRepeatingAdvertising(handle)
+        }
     }
 
+    fun stopBackgroundAdvertising() {
+        bleManager.stopRepeatingAdvertising()
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        stopScan()
+    }
 }
 
 data class NearbyUser(
-    val address: String,
-    val name: String
+    val name: String,
+    val address: String
 )

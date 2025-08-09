@@ -3,11 +3,13 @@ package com.site.pochak.app.feature.nearby.pochaker
 import android.Manifest
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothDevice
 import android.content.Intent
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -16,8 +18,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
@@ -32,13 +33,10 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.site.pochak.app.core.designsystem.component.CircleCropAsyncImage
-import com.site.pochak.app.core.designsystem.component.MoreButton
 import com.site.pochak.app.core.designsystem.component.PochakNavigationTopAppBar
-import com.site.pochak.app.core.designsystem.component.PochakTopAppBar
-import com.site.pochak.app.core.designsystem.theme.Yellow00
-import kotlin.math.cos
+import kotlinx.coroutines.delay
+import kotlin.math.hypot
 import kotlin.math.roundToInt
-import kotlin.math.sin
 import kotlin.random.Random
 
 @Composable
@@ -67,7 +65,7 @@ fun NearbyPochakerScreen(
     modifier: Modifier = Modifier,
     viewModel: NearbyPochakerViewModel = hiltViewModel(),
     userHandle: String?,
-    nearbyUsers: List<NearbyUser>,
+    nearbyUsers: List<BluetoothDevice>,
     onBack: () -> Unit,
     navigateToCamera: (String) -> Unit
 ) {
@@ -79,16 +77,12 @@ fun NearbyPochakerScreen(
     ) { permissions ->
         val allGranted = permissions.values.all { it }
         if (allGranted) {
-            viewModel.startAdvertising()
-            viewModel.startScan()
         } else {
             Toast.makeText(context, "BLE 권한이 필요합니다", Toast.LENGTH_SHORT).show()
         }
     }
 
     LaunchedEffect(Unit) {
-        viewModel.addDummyNearbyUsers()
-
         val adapter = BluetoothAdapter.getDefaultAdapter()
         if (adapter == null || !adapter.isEnabled) {
             context.startActivity(Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE))
@@ -151,7 +145,7 @@ fun NearbyPochakerScreen(
                         modifier = Modifier
                             .align(Alignment.Center)
                             .offset(y = 40.dp),
-                        style = MaterialTheme.typography.bodySmall,
+                        style = MaterialTheme.typography.bodyMedium,
                         textAlign = TextAlign.Center
                     )
                 }
@@ -159,8 +153,7 @@ fun NearbyPochakerScreen(
 
             Box(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(32.dp),
+                    .fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
 
@@ -199,42 +192,84 @@ fun RandomProfilesAroundCenter(
     onClick: (String) -> Unit
 ) {
     val density = LocalDensity.current
+    val screenHeightDp = 484.dp
     val screenWidthDp = LocalConfiguration.current.screenWidthDp.dp
-    val boxSize = screenWidthDp
     val profileSize = 60.dp
+
+    val positions = remember(profiles) {
+        val widthPx = with(density) { screenWidthDp.toPx() }
+        val heightPx = with(density) { screenHeightDp.toPx() }
+        val profileSizePx = with(density) { profileSize.toPx() }
+        val radiusExclusionPx = with(density) { excludeCenterRadius.toPx() / 2f + profileSizePx / 2f }
+
+        val random = Random(System.currentTimeMillis())
+        val placedPositions = mutableListOf<Pair<Float, Float>>()
+        val result = mutableListOf<Triple<String, Float, Float>>()
+        val minGapPx = with(density) { 10.dp.toPx() }
+
+        val maxAttempts = 30
+
+        for (name in profiles) {
+            var attempt = 0
+            var placed = false
+
+            while (attempt < maxAttempts && !placed) {
+                val offsetX = random.nextFloat() * (widthPx - profileSizePx) - (widthPx - profileSizePx) / 2f
+                val offsetY = random.nextFloat() * (heightPx - profileSizePx) - (heightPx - profileSizePx) / 2f
+
+                // 중심에서 너무 가까우면 제외
+                val distanceFromCenter = hypot(offsetX, offsetY)
+                if (distanceFromCenter < radiusExclusionPx) {
+                    attempt++
+                    continue
+                }
+
+                // 겹침 검사
+                val overlaps = placedPositions.any { (x, y) ->
+                    hypot(x - offsetX, y - offsetY) < profileSizePx + minGapPx
+                }
+
+                if (!overlaps) {
+                    placedPositions.add(offsetX to offsetY)
+                    result.add(Triple(name, offsetX, offsetY))
+                    placed = true
+                }
+
+                attempt++
+            }
+
+            if (!placed) {
+                // fallback 위치
+                result.add(Triple(name, 0f, 0f))
+            }
+        }
+
+        result
+    }
 
     Box(
         modifier = modifier
-            .size(boxSize)
-            .aspectRatio(1f),
+            .fillMaxWidth()
+            .height(656.dp), // 예시 직사각형 높이
         contentAlignment = Alignment.Center
     ) {
-        val centerPx = with(density) { boxSize.toPx() / 2f }
-        val profileSizePx = with(density) { profileSize.toPx() }
-        val radiusMin = with(density) { excludeCenterRadius.toPx() / 2f + profileSizePx / 2f }
-        val radiusMax = centerPx - profileSizePx / 2f + with(density) { 10.dp.toPx() }  // 약간 확장
+        positions.forEachIndexed { index, (name, offsetX, offsetY) ->
+            var visible by remember { mutableStateOf(false) }
+            val alpha by animateFloatAsState(
+                targetValue = if (visible) 1f else 0f,
+                animationSpec = tween(durationMillis = 1000, delayMillis = index * 300),
+                label = "fade-in"
+            )
 
-        val verticalBias = with(density) { 10.dp.toPx() }  // Y 방향 bias
-
-        val baseAngles = listOf(20, 90, 160, 230, 300)  // 각도 다양하게 퍼뜨리기
-        val random = remember { Random(0) }
-
-        profiles.take(baseAngles.size).forEachIndexed { index, name ->
-            val angleDeg = baseAngles[index].toDouble()
-            val angleRad = Math.toRadians(angleDeg)
-
-            val baseRadius = random.nextDouble(radiusMin.toDouble(), radiusMax.toDouble())
-
-            val yBias = (sin(angleRad) * verticalBias).toFloat()
-
-            val offsetX = (cos(angleRad) * baseRadius).toFloat()
-            val offsetY = (sin(angleRad) * baseRadius).toFloat() + yBias
+            LaunchedEffect(Unit) {
+                delay(index * 300L)
+                visible = true
+            }
 
             Box(
                 modifier = Modifier
-                    .offset {
-                        IntOffset(offsetX.roundToInt(), offsetY.roundToInt())
-                    }
+                    .offset { IntOffset(offsetX.roundToInt(), offsetY.roundToInt()) }
+                    .alpha(alpha)
             ) {
                 ProfileWithLabel(
                     handle = name,
@@ -245,7 +280,6 @@ fun RandomProfilesAroundCenter(
         }
     }
 }
-
 @Composable
 fun ProfileWithLabel(
     modifier: Modifier = Modifier,
@@ -262,7 +296,7 @@ fun ProfileWithLabel(
             size = size,
             onClick = onClick
         )
-        Text(handle, style = MaterialTheme.typography.bodySmall)
+        Text(handle, style = MaterialTheme.typography.bodyMedium)
     }
 }
 
