@@ -21,10 +21,6 @@
         android:name="android.permission.BLUETOOTH_ADVERTISE"
         tools:ignore="UnusedAttribute" />
 
-    <uses-permission
-        android:name="android.permission.ACCESS_FINE_LOCATION"
-        tools:ignore="MissingPermission" />
-
     <application
         android:name=".PochakApplication"
         android:allowBackup="true"

@@ -175,7 +175,8 @@ fun UploadScreen(
                         onClick = {
                             viewModel.postPost(
                                 postImage = compressImageFile(cachedImageFile, context),
-                                taggedMemberHandleList = listOfNotNull(nearbyPochakerHandle) + selectedItems.value,
+                                taggedMemberHandleList = selectedItems.value.ifEmpty { null },
+                                pinnedHandle = nearbyPochakerHandle,
                                 caption = caption.value
                             )
                         },

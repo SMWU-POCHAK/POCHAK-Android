@@ -18,14 +18,15 @@ class PostUseCase @Inject constructor(
 ) {
     operator fun invoke(
         postImage: File,
-        taggedMemberHandleList: List<String>,
+        taggedMemberHandleList: List<String>?,
+        pinnedHandle: String? = null,
         caption: String
     ): Flow<UploadUiState> = flow {
         emit(UploadUiState.Loading) // 업로드 시작 시 로딩 상태 방출
 
         try {
             val result = withContext(Dispatchers.IO) {
-                postRepository.postPost(postImage, taggedMemberHandleList, caption)
+                postRepository.postPost(postImage, taggedMemberHandleList, pinnedHandle, caption)
             }
 
             // ApiResult 기반 결과 처리

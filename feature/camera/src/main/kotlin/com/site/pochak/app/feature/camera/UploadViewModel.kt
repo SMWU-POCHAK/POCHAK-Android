@@ -134,9 +134,9 @@ class UploadViewModel @Inject constructor(
     }
 
     // 게시물 생성 함수
-    fun postPost(postImage: File, taggedMemberHandleList: List<String>, caption: String) {
+    fun postPost(postImage: File, taggedMemberHandleList: List<String>?, pinnedHandle: String?, caption: String) {
         viewModelScope.launch {
-            postUseCase(postImage, taggedMemberHandleList, caption).collect { state ->
+            postUseCase(postImage, taggedMemberHandleList, pinnedHandle, caption).collect { state ->
                 // postUseCase의 상태를 _uploadUiState로 업데이트
                 _uploadUiState.value = state
             }
