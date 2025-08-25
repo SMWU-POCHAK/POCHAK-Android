@@ -184,6 +184,8 @@ fun CircularBackground(modifier: Modifier = Modifier) {
         )
     }
 }
+
+
 @Composable
 fun RandomProfilesAroundCenter(
     profiles: List<String>,
@@ -194,28 +196,37 @@ fun RandomProfilesAroundCenter(
     val density = LocalDensity.current
     val screenHeightDp = 484.dp
     val screenWidthDp = LocalConfiguration.current.screenWidthDp.dp
-    val profileSize = 60.dp
 
-    val positions = remember(profiles) {
+    val visibleProfiles = remember(profiles) { profiles.take(5) }
+
+    val profileSizes = remember(visibleProfiles) {
+        visibleProfiles.map { Random.nextInt(48, 61).dp }
+    }
+
+    val positions = remember(visibleProfiles) {
         val widthPx = with(density) { screenWidthDp.toPx() }
         val heightPx = with(density) { screenHeightDp.toPx() }
-        val profileSizePx = with(density) { profileSize.toPx() }
-        val radiusExclusionPx = with(density) { excludeCenterRadius.toPx() / 2f + profileSizePx / 2f }
-
-        val random = Random(System.currentTimeMillis())
-        val placedPositions = mutableListOf<Pair<Float, Float>>()
-        val result = mutableListOf<Triple<String, Float, Float>>()
         val minGapPx = with(density) { 10.dp.toPx() }
+        val random = Random(System.currentTimeMillis())
 
+        val placedPositions = mutableListOf<Pair<Float, Float>>()
+        val result = mutableListOf<ProfilePosition>()
         val maxAttempts = 30
 
-        for (name in profiles) {
+        visibleProfiles.forEachIndexed { index, name ->
+            val profileSize = profileSizes[index]
+            val profileSizePx = with(density) { profileSize.toPx() }
+            val radiusExclusionPx =
+                with(density) { excludeCenterRadius.toPx() / 2f + profileSizePx / 2f }
+
             var attempt = 0
             var placed = false
+            var offsetX = 0f
+            var offsetY = 0f
 
             while (attempt < maxAttempts && !placed) {
-                val offsetX = random.nextFloat() * (widthPx - profileSizePx) - (widthPx - profileSizePx) / 2f
-                val offsetY = random.nextFloat() * (heightPx - profileSizePx) - (heightPx - profileSizePx) / 2f
+                offsetX = random.nextFloat() * (widthPx - profileSizePx) - (widthPx - profileSizePx) / 2f
+                offsetY = random.nextFloat() * (heightPx - profileSizePx) - (heightPx - profileSizePx) / 2f
 
                 // 중심에서 너무 가까우면 제외
                 val distanceFromCenter = hypot(offsetX, offsetY)
@@ -231,17 +242,12 @@ fun RandomProfilesAroundCenter(
 
                 if (!overlaps) {
                     placedPositions.add(offsetX to offsetY)
-                    result.add(Triple(name, offsetX, offsetY))
                     placed = true
                 }
-
                 attempt++
             }
 
-            if (!placed) {
-                // fallback 위치
-                result.add(Triple(name, 0f, 0f))
-            }
+            result.add(ProfilePosition(name, offsetX, offsetY, profileSize))
         }
 
         result
@@ -250,10 +256,10 @@ fun RandomProfilesAroundCenter(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(656.dp), // 예시 직사각형 높이
+            .height(656.dp),
         contentAlignment = Alignment.Center
     ) {
-        positions.forEachIndexed { index, (name, offsetX, offsetY) ->
+        positions.forEachIndexed { index, profile ->
             var visible by remember { mutableStateOf(false) }
             val alpha by animateFloatAsState(
                 targetValue = if (visible) 1f else 0f,
@@ -268,18 +274,19 @@ fun RandomProfilesAroundCenter(
 
             Box(
                 modifier = Modifier
-                    .offset { IntOffset(offsetX.roundToInt(), offsetY.roundToInt()) }
+                    .offset { IntOffset(profile.offsetX.roundToInt(), profile.offsetY.roundToInt()) }
                     .alpha(alpha)
             ) {
                 ProfileWithLabel(
-                    handle = name,
-                    size = profileSize,
+                    handle = profile.name,
+                    size = profile.size,
                     onClick = onClick
                 )
             }
         }
     }
 }
+
 @Composable
 fun ProfileWithLabel(
     modifier: Modifier = Modifier,
@@ -307,7 +314,7 @@ fun ProfileImage(
     onClick: (String) -> Unit = {}) {
     CircleCropAsyncImage(
         modifier = Modifier
-            .size(60.dp)
+            .size(size)
             .border(
             width = 2.dp,
             color = Color.White,
@@ -318,3 +325,10 @@ fun ProfileImage(
         onClick = { onClick(handle) }
     )
 }
+
+data class ProfilePosition(
+    val name: String,
+    val offsetX: Float,
+    val offsetY: Float,
+    val size: Dp
+)

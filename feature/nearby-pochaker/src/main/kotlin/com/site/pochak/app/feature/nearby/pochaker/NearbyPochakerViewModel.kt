@@ -51,27 +51,8 @@ class NearbyPochakerViewModel @Inject constructor(
         }
     }
 
-    fun startScan() {
-        bleManager.startScanning()
-    }
-
     fun stopScan() {
         bleManager.stopScanning()
-    }
-
-    fun startAdvertising() {
-        bleManager.startAdvertising(_userHandle.value ?: return)
-    }
-
-    fun startBackgroundAdvertising() {
-        viewModelScope.launch {
-            val handle = userHandle.value ?: return@launch
-            bleManager.startRepeatingAdvertising(handle)
-        }
-    }
-
-    fun stopBackgroundAdvertising() {
-        bleManager.stopRepeatingAdvertising()
     }
 
     override fun onCleared() {
@@ -79,8 +60,3 @@ class NearbyPochakerViewModel @Inject constructor(
         stopScan()
     }
 }
-
-data class NearbyUser(
-    val name: String,
-    val address: String
-)

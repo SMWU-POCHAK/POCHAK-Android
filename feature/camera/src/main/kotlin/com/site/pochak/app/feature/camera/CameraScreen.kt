@@ -23,7 +23,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.LifecycleOwner
@@ -140,7 +139,15 @@ internal fun CameraScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             PochakTopAppBar(
-                centerContent = { Text(text = stringResource(R.string.feature_camera_title)) },
+                centerContent = {
+                    val title = if (!nearbyPochakerHandle.isNullOrEmpty()) {
+                        "@$nearbyPochakerHandle ${stringResource(R.string.feature_camera_title)}"
+                    } else {
+                        stringResource(R.string.feature_camera_title)
+                    }
+
+                    Text(text = title)
+                },
             )
             Box(
                 modifier = modifier

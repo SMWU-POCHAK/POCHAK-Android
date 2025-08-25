@@ -2,7 +2,6 @@ package com.site.pochak.app.feature.camera
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.LinearOutSlowInEasing
@@ -51,7 +50,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -692,8 +690,8 @@ fun HighlightedItemView(
         Image(
             modifier = modifier
                 .padding(start = 4.dp)
-                .size(20.dp),
-            painter = painterResource(id = PochakIcons.DeleteGray06),
+                .size(10.dp),
+            painter = painterResource(id = R.drawable.ic_pin),
             contentDescription = "profile image"
         )
     }
