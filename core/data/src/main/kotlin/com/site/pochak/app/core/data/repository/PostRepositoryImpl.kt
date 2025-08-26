@@ -22,17 +22,19 @@ class PostRepositoryImpl @Inject constructor(
 
     override suspend fun postPost(
         postImage: File,
-        taggedMemberHandleList: List<String>,
+        taggedMemberHandleList: List<String>?,
+        pinnedHandle: String?,
         caption: String
     ): ApiResult {
         val multipartBody = fileToMultiPartBody(postImage, "PostImage")
 
-        val joinedTaggedMembers = taggedMemberHandleList.joinToString(",")
+        val joinedTaggedMembers = taggedMemberHandleList?.joinToString(",")
 
         return ApiResultHandler.handleResult {
             postService.postPost(
                 postImage = multipartBody,
                 taggedMemberHandleList = joinedTaggedMembers,
+                pinnedHandle = pinnedHandle,
                 caption = caption
             )
         }

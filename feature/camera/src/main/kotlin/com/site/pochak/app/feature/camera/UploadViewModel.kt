@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.navigation.toRoute
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import androidx.paging.map
@@ -17,6 +18,8 @@ import com.site.pochak.app.core.domain.SearchUseCase
 import com.site.pochak.app.core.domain.UploadUiState
 import com.site.pochak.app.core.model.data.Member
 import com.site.pochak.app.core.network.model.toModel
+import com.site.pochak.app.feature.camera.navigation.CameraRoute
+import com.site.pochak.app.feature.camera.navigation.UploadRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -42,6 +45,15 @@ class UploadViewModel @Inject constructor(
     private val postUseCase: PostUseCase,
     private val tokenManager: TokenManager
 ) : ViewModel() {
+
+    private val nearbyPochakerhandleKey = "nearbyPochakerhandle"
+
+    private val route = saveStateHandle.toRoute<UploadRoute>()
+    private val nearbyPochakerhandle = saveStateHandle.getStateFlow(
+        key = nearbyPochakerhandleKey,
+        initialValue = route.nearbyPochakerhandle
+    )
+    val nearbyPochakerHandle: StateFlow<String?> = nearbyPochakerhandle
 
     private val _userHandle = MutableStateFlow<String?>(null)
     val userHandle: StateFlow<String?> = _userHandle
@@ -122,9 +134,9 @@ class UploadViewModel @Inject constructor(
     }
 
     // 게시물 생성 함수
-    fun postPost(postImage: File, taggedMemberHandleList: List<String>, caption: String) {
+    fun postPost(postImage: File, taggedMemberHandleList: List<String>?, pinnedHandle: String?, caption: String) {
         viewModelScope.launch {
-            postUseCase(postImage, taggedMemberHandleList, caption).collect { state ->
+            postUseCase(postImage, taggedMemberHandleList, pinnedHandle, caption).collect { state ->
                 // postUseCase의 상태를 _uploadUiState로 업데이트
                 _uploadUiState.value = state
             }

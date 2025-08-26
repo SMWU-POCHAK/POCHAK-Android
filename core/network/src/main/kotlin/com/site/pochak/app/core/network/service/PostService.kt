@@ -38,8 +38,8 @@ interface PostService {
     @POST(value = "api/v2/posts")
     suspend fun postPost(
         @Part postImage: MultipartBody.Part,
-
-        @Query("taggedMemberHandleList") taggedMemberHandleList: String,
+        @Query("taggedMemberHandleList") taggedMemberHandleList: String? = null,
+        @Query("pinnedHandle") pinnedHandle: String? = null,
         @Query("caption") caption: String
     ): NetworkResponse<Unit>
 

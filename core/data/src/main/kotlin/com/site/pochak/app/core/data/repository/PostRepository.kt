@@ -18,7 +18,8 @@ interface PostRepository {
 
     suspend fun postPost(
         postImage: File,
-        taggedMemberHandleList: List<String>,
+        taggedMemberHandleList: List<String>?,
+        pinnedHandle : String?,
         caption: String
     ): ApiResult
 

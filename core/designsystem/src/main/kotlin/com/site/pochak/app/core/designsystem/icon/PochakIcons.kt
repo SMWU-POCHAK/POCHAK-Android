@@ -30,4 +30,5 @@ object PochakIcons {
     val Checked = R.drawable.ic_checked
     val Setting = R.drawable.ic_setting
     val UploadComment = R.drawable.ic_upload_comment
+    val NearbyPochaker = R.drawable.ic_nearby_pochaker
 }

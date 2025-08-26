@@ -49,6 +49,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -88,6 +89,7 @@ import com.site.pochak.app.core.designsystem.theme.Gray03
 import com.site.pochak.app.core.designsystem.theme.Gray0_5
 import com.site.pochak.app.core.designsystem.theme.Navy00
 import com.site.pochak.app.core.designsystem.theme.Yellow00
+import com.site.pochak.app.core.designsystem.theme.Yellow01
 import com.site.pochak.app.core.domain.SearchMembersUiState
 import com.site.pochak.app.core.domain.UploadUiState
 import com.site.pochak.app.core.model.data.Member
@@ -106,6 +108,7 @@ internal fun UploadRoute(
     val searchMembersUiState by viewModel.searchMembersUiState
     val uploadUiState by viewModel.uploadUiState
     val followingList = viewModel.followingList.collectAsLazyPagingItems()
+    val nearbyPochakerHandle by viewModel.nearbyPochakerHandle.collectAsState()
 
     UploadScreen(
         modifier = modifier,
@@ -115,7 +118,8 @@ internal fun UploadRoute(
         navigateToHome = navigateToHome,
         onBackClick = onBackClick,
         followingList = followingList,
-        )
+        nearbyPochakerHandle = nearbyPochakerHandle
+    )
 }
 
 @Composable
@@ -127,6 +131,7 @@ fun UploadScreen(
     navigateToHome: () -> Unit,
     onBackClick: () -> Unit,
     followingList: LazyPagingItems<Member>,
+    nearbyPochakerHandle: String? = null,
 ) {
     val context = LocalContext.current
     val cachedImageFile = File(context.cacheDir, "pochak_image.jpg")
@@ -168,16 +173,18 @@ fun UploadScreen(
                         onClick = {
                             viewModel.postPost(
                                 postImage = compressImageFile(cachedImageFile, context),
-                                taggedMemberHandleList = selectedItems.value,
+                                taggedMemberHandleList = selectedItems.value.ifEmpty { null },
+                                pinnedHandle = nearbyPochakerHandle,
                                 caption = caption.value
                             )
                         },
-                        enabled = selectedItems.value.isNotEmpty() // selectedItems가 비어 있으면 비활성화
+                        // selectedItems과 nearbypochakerhandle이 둘다 비어있으면 비활성화
+                        enabled = selectedItems.value.isNotEmpty() || nearbyPochakerHandle != null,
                     ) {
                         Text(
                             text = stringResource(R.string.feature_camera_upload_button),
                             style = MaterialTheme.typography.bodySmall,
-                            color = if (selectedItems.value.isNotEmpty()) Yellow00 else Gray03, // 상태에 따른 색상
+                            color = if (selectedItems.value.isNotEmpty() || nearbyPochakerHandle != null) Yellow00 else Gray03, // 상태에 따른 색상
                         )
                     }
                 },
@@ -209,6 +216,7 @@ fun UploadScreen(
                         handleSearchText = handleSearchText,
                         selectedItems = selectedItems,
                         followingList = followingList,
+                        nearbyPochakerHandle = nearbyPochakerHandle
                         )
                 }
             }
@@ -321,7 +329,8 @@ private fun SearchScreen(
     searchMembersUiState: SearchMembersUiState,
     handleSearchText: MutableState<String>,
     selectedItems: MutableState<List<String>>,
-    followingList: LazyPagingItems<Member>
+    followingList: LazyPagingItems<Member>,
+    nearbyPochakerHandle: String? = null,
 ) {
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
@@ -352,6 +361,13 @@ private fun SearchScreen(
                 mainAxisSpacing = 8.dp,
                 crossAxisSpacing = 8.dp,
             ) {
+                nearbyPochakerHandle?.let { handle ->
+                    HighlightedItemView(
+                        modifier = modifier,
+                        item = handle,
+                    )
+                }
+
                 selectedItems.value.forEach { item ->
                     SelectedItemView(
                         modifier = modifier,
@@ -452,7 +468,10 @@ private fun SearchScreen(
                                             result = member,
                                             onResultClick = {
                                                 handleSearchText.value = ""
-                                                if (member.handle !in selectedItems.value && selectedItems.value.size < 5) {
+                                                if (member.handle !in selectedItems.value
+                                                    && selectedItems.value.size < 5 &&
+                                                    member.handle != nearbyPochakerHandle
+                                                ) {
                                                     selectedItems.value += member.handle
                                                 } else if (selectedItems.value.size >= 5) {
                                                     showTagDialog = true
@@ -506,7 +525,11 @@ private fun SearchScreen(
                                     SearchResultItem(
                                         result = member,
                                         onResultClick = {
-                                            if (member.handle !in selectedItems.value && selectedItems.value.size < 5) {
+                                            if (
+                                                member.handle !in selectedItems.value &&
+                                                selectedItems.value.size < 5 &&
+                                                member.handle != nearbyPochakerHandle
+                                            ) {
                                                 selectedItems.value += member.handle
                                             } else if (selectedItems.value.size >= 5) {
                                                 showTagDialog = true
@@ -627,7 +650,7 @@ fun SelectedItemView(
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
-            .background(Yellow00, shape = RoundedCornerShape(18.dp))
+            .background(Yellow01, shape = RoundedCornerShape(18.dp))
             .wrapContentWidth()
             .padding(horizontal = 10.dp, vertical = 8.dp)
     ) {
@@ -641,6 +664,34 @@ fun SelectedItemView(
                     onDeleteClick(item)
                 },
             painter = painterResource(id = PochakIcons.DeleteGray06),
+            contentDescription = "profile image"
+        )
+    }
+}
+
+@Composable
+fun HighlightedItemView(
+    modifier: Modifier = Modifier,
+    item: String,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+            .background(color = Yellow00, shape = RoundedCornerShape(18.dp))
+            .wrapContentWidth()
+            .padding(horizontal = 10.dp, vertical = 8.dp)
+    ) {
+        Text(
+            text = item,
+            color = Navy00,
+            style = MaterialTheme.typography.bodySmall
+        )
+
+        Image(
+            modifier = modifier
+                .padding(start = 4.dp)
+                .size(10.dp),
+            painter = painterResource(id = R.drawable.ic_pin),
             contentDescription = "profile image"
         )
     }

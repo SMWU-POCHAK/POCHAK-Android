@@ -16,24 +16,33 @@ import com.site.pochak.app.feature.camera.CameraViewModel
 import com.site.pochak.app.feature.camera.UploadRoute
 import kotlinx.serialization.Serializable
 
-@Serializable data object CameraRoute
-@Serializable data object UploadRoute
+@Serializable data class CameraRoute(
+    val nearbyPochakerhandle: String? = null
+)
 
-fun NavController.navigateToCamera(navOptions: NavOptions? = null) = navigate(CameraRoute, navOptions)
+@Serializable data class UploadRoute(
+    val nearbyPochakerhandle: String? = null
+)
+
+fun NavController.navigateToCamera(
+    nearbyPochakerhandle: String? = null,
+    navOptions: NavOptions? = null
+) = navigate(CameraRoute(nearbyPochakerhandle), navOptions)
 
 fun NavGraphBuilder.cameraScreen(
-    navigateToUpload: () -> Unit,
+    navigateToUpload: (String?) -> Unit,
 ) {
     composable<CameraRoute> {
         CameraRoute(
-            navigateToUpload = navigateToUpload,
+            navigateToUpload = navigateToUpload
         )
     }
 }
 
 fun NavController.navigateToUpload(
+    nearbyPochakerhandle: String? = null,
     navOptions: NavOptions? = null
-) = navigate(UploadRoute, navOptions)
+) = navigate(UploadRoute(nearbyPochakerhandle), navOptions)
 
 fun NavGraphBuilder.uploadScreen(
     navigateToHome: () -> Unit,

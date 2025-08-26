@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -41,9 +42,13 @@ import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.firebase.messaging.FirebaseMessaging
+import com.site.pochak.app.core.data.compressImageFile
 import com.site.pochak.app.core.designsystem.component.PochakTopAppBar
 import com.site.pochak.app.core.designsystem.component.RefreshableLazyVerticalGrid
+import com.site.pochak.app.core.designsystem.icon.PochakIcons
 import com.site.pochak.app.core.designsystem.theme.Gray02
+import com.site.pochak.app.core.designsystem.theme.Gray03
+import com.site.pochak.app.core.designsystem.theme.Yellow00
 import com.site.pochak.app.core.model.data.Post
 import com.site.pochak.app.core.ui.postFeed
 
@@ -54,6 +59,7 @@ internal fun HomeRoute(
     modifier: Modifier = Modifier,
     navigateToPostDetail: (Int) -> Unit,
     viewModel: HomeViewModel = hiltViewModel(),
+    navigateToNearbyPochaker: () -> Unit,
 ) {
     val homePosts = viewModel.homePosts.collectAsStateWithLifecycle()
     val isLoading = viewModel.isLoading.collectAsStateWithLifecycle()
@@ -67,6 +73,7 @@ internal fun HomeRoute(
         isRefreshing = isRefreshing.value,
         onLoadPage = viewModel::loadPage,
         onPostClick = navigateToPostDetail,
+        onNearbyPochakerClick = navigateToNearbyPochaker,
     )
 }
 
@@ -79,6 +86,7 @@ internal fun HomeScreen(
     isRefreshing: Boolean,
     onLoadPage: (Boolean) -> Unit,
     onPostClick: (Int) -> Unit,
+    onNearbyPochakerClick: () -> Unit,
 ) {
     RequestNotificationPermission(
         onPermissionGranted = {
@@ -109,7 +117,19 @@ internal fun HomeScreen(
                     painter = painterResource(id = R.drawable.feature_home_logo_small),
                     contentDescription = "Pochak Logo",
                 )
-            }
+            },
+            rightContent = {
+                IconButton(
+                    onClick = {
+                        onNearbyPochakerClick()
+                    }
+                ) {
+                    Image(
+                        painter = painterResource(id = PochakIcons.NearbyPochaker),
+                        contentDescription = "Nearby Pochaker",
+                    )
+                }
+            },
         )
 
         HomeContent(
